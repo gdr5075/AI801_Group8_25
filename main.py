@@ -1,9 +1,8 @@
-from uno_package import card, deck
+from uno_package import player, game
 
 def main():
-    mainDeck = deck.UnoMainDeck()
-    discardDeck = deck.Deck()
-    mainDeck.print_all()
+    players = [player.Player('Gandalf'), player.Player('Frodo'), player.Player('Sauron'), player.Player('Gollum')]
+    game.Game(players)
         
 if __name__ == "__main__":
     main()
