@@ -19,3 +19,6 @@ class Player:
 
     def call_uno(self):
         pass
+
+    def card_count(self):
+        return self.hand.__len__()

@@ -30,7 +30,10 @@ class Game:
         pass
 
     def is_game_over(self):
-        pass
+        for player in self.players:
+            if player.card_count() == 0:
+                return True
+        return False
 
     def add_discard_pile_to_main_deck(self):
         while self.discardPile.__len__() > 0:
