@@ -12,8 +12,10 @@ class Player:
         if(len(moves) == 0):
             game.draw_card(self)
         else:
-            idx = random.randrange(0, len(moves))
-            game.play_card(self.hand.pop(idx))
+            idx = random.choice(moves)
+            cardToPlay = self.hand.pop(idx)
+            #print(f"player {self.name} playing {cardToPlay}")
+            game.play_card(cardToPlay)
 
 
     def add_to_hand(self, cards):
