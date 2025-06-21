@@ -10,6 +10,8 @@ class Game:
         self.turn_count = 0
         self.isClockwise = True
         self.currentPlayer = 0
+        ## this is in the case of draw4 or draw2, need a way to tell player
+        self.nextPlayerAction = None
         ## decide turn order randomly
         random.shuffle(players)
 
@@ -33,21 +35,16 @@ class Game:
         #print(f'beginning top card {self.get_top_play_card()}')
         while self.is_game_over() == False and self.turn_count < 2000:
             self.turn_count+=1
-            self.get_next_player().play(self)
+            self.get_next_player().play(self, self.nextPlayerAction)
             self.handle_special_cards()
-            #print('current top card')
-            #print(self.get_top_play_card())
-            if(self.deck.is_empty):
+            #print(f'current top card {self.get_top_play_card()}')
+            if(self.deck.is_empty()):
                 self.add_play_pile_to_main_deck()
         if(self.winning_player != None):
             print(f"{self.winning_player.name} won the game")
         return self.winning_player
         
     def get_next_player(self):
-        #todo - make reverse and skip cards work
-        #probably can be done by using an array instead of a list and just adding and subtracting
-        #from an index based on moves + handling wrap around cases
-
         ## clockwise increment currentPlayer by 1
         if(self.isClockwise):
             if(self.currentPlayer < self.players.__len__() - 1):
@@ -72,15 +69,21 @@ class Game:
 
     #todo - make sure this leaves the last card in play
     def add_play_pile_to_main_deck(self):
-        while self.playPile.__len__() > 1:
-            self.deck.push(self.playPile.pop())
-        self.deck.shuffle()
+        ## pop top card to leave on play pile
+
+        if(self.playPile.__len__() > 0):
+            c = self.playPile.pop()
+
+            while self.playPile.__len__() > 0:
+                self.deck.push(self.playPile.pop())
+            
+            self.playPile.append(c)
+            self.deck.shuffle()
     
     def print_status(self):
-        pass
-        #print(self.deck.size())
-        #print(self.playPile.__len__())
-        #print(self.playPile[self.playPile.__len__() - 1])
+        print(self.deck.size())
+        print(self.playPile.__len__())
+        print(self.playPile[self.playPile.__len__() - 1])
 
     def deal_cards(self, player, number):
         cards = []
@@ -113,13 +116,44 @@ class Game:
         return self.playPile[self.playPile.__len__()-1]
 
     def play_card(self, card):
-        self.playPile.insert(0, card)
+        self.playPile.append(card)
 
+    ## gets a card from the deck
+    ## if empty after, call method to shuffle playpile back into deck
+    def draw_card_from_deck(self):
+        c = self.deck.pop()
+        if(self.deck.is_empty()):
+            self.add_play_pile_to_main_deck()
+        return c
+
+    ## draws a single card from the deck
     def draw_card(self, player):
-        player.hand.append(self.deck.pop())
+        player.hand.append(self.draw_card_from_deck())
 
+    ## draws multiple cards from the deck
+    ## useful for draw4 and draw2
+    def draw_cards(self, player, number):
+        for i in range(number):
+            self.draw_card(player)
+
+    ## this handles cards in the deck that have special effects
     def handle_special_cards(self):
+
         if(self.get_top_play_card().value == card.VALUE.REVERSE):
             self.isClockWise = not self.isClockwise
+            return
         if(self.get_top_play_card().value == card.VALUE.SKIP):
             self.get_next_player()
+            return
+        if(self.get_top_play_card().value == card.VALUE.DRAW2):
+            if(self.nextPlayerAction == None):
+                self.nextPlayerAction = card.VALUE.DRAW2
+            else:
+                self.nextPlayerAction = None
+            return
+        if(self.get_top_play_card().value == card.VALUE.DRAW4):
+            if(self.nextPlayerAction == None):
+                self.nextPlayerAction = card.VALUE.DRAW4
+            else:
+                self.nextPlayerAction = None
+            return

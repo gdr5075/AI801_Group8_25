@@ -1,12 +1,22 @@
 import random
+from uno_package import card
 
 class Player:
     def __init__(self, name):
         self.name = name
         self.hand = []
 
-    def play(self, game):
+    def play(self, game, specialAction):
         #print(f"Player {self.name} is currently playing")
+        if(specialAction == card.VALUE.DRAW2):
+            #print(f"player {self.name} drawing 2 cards")
+            game.draw_cards(self, 2)
+            return
+        elif(specialAction == card.VALUE.DRAW4):
+            #print(f"player {self.name} drawing 4 cards")
+            game.draw_cards(self, 4)
+            return
+        
         self.show_hand()
         moves = game.get_valid_moves(self)
         if(len(moves) == 0):
