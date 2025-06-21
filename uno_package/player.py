@@ -21,6 +21,7 @@ class Player:
         #self.show_hand()
         moves = game.get_valid_moves(self)
         if(len(moves) == 0):
+            print(f"player {self.name} is drawing a card")
             game.draw_card(self)
         else:
             idx = random.choice(moves)
@@ -63,6 +64,7 @@ class HumanPlayer(Player):
     def __init__(self, name):
         super().__init__(name)
 
+    ## TODO: show player hand counts to human player
     def play(self, game, specialAction):
         print(f'{TextCode.RED.value}Your turn {self.name}{TextCode.RESET.value}')
         print(f'Current top card is {self.colorize_text_based_on_card_color(game.get_top_play_card(), game.get_top_play_card())}')
@@ -103,6 +105,7 @@ class HumanPlayer(Player):
                     break
                 except ValueError:
                     print("Please enter a valid number for move")
+        print(self.card_count())
 
     def colorize_text_based_on_card_color(self, text, c):
         colorText = ''

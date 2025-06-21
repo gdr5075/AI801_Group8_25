@@ -32,9 +32,10 @@ class Game:
         #self.print_status()
 
     def play(self):
-        #print(f'beginning top card {self.get_top_play_card()}')
+        print(f'beginning top card {self.get_top_play_card()}')
         while self.is_game_over() == False and self.turn_count < 2000:
             self.turn_count+=1
+            print(f"Turn {self.turn_count}")
             self.get_next_player().play(self, self.nextPlayerAction)
             self.handle_special_cards()
             #print(f'current top card {self.get_top_play_card()}')
@@ -140,8 +141,9 @@ class Game:
     def handle_special_cards(self):
 
         if(self.get_top_play_card().value == card.VALUE.REVERSE):
-            self.isClockWise = not self.isClockwise
+            self.isClockwise = not self.isClockwise
             return
+        ## think about changing skip to act like draw2 and draw4 if we want negative reward for being skipped?
         if(self.get_top_play_card().value == card.VALUE.SKIP):
             self.get_next_player()
             return
