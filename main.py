@@ -1,7 +1,8 @@
 from uno_package import player, game
 
 def main():
-    players = [player.Player('Gandalf'), player.Player('Frodo'), player.Player('Sauron'), player.Player('Gollum')]
+    me = player.HumanPlayer('Zach')
+    players = [me, player.Player('Frodo'), player.Player('Sauron'), player.Player('Gollum')]
     for i in range(0,20):
         game.Game(players).play()
 
