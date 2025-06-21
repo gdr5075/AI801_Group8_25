@@ -7,7 +7,7 @@ class Player:
         self.name = name
         self.hand = []
 
-    def play(self, game, specialAction):
+    def play(self, game, gameState, specialAction):
         print(f"Player {self.name} is currently playing")
         if(specialAction == card.VALUE.DRAW2):
             print(f"player {self.name} drawing 2 cards")
@@ -52,6 +52,7 @@ class Player:
     def hand(self):
         return self.hand
     
+##ansi codes to color text
 class TextCode(Enum):
     RED = "\033[38;5;9m"
     GREEN = "\033[38;5;76m"
@@ -64,10 +65,19 @@ class HumanPlayer(Player):
     def __init__(self, name):
         super().__init__(name)
 
-    ## TODO: show player hand counts to human player
-    def play(self, game, specialAction):
-        print(f'{TextCode.RED.value}Your turn {self.name}{TextCode.RESET.value}')
-        print(f'Current top card is {self.colorize_text_based_on_card_color(game.get_top_play_card(), game.get_top_play_card())}')
+    def play(self, game, gameState, specialAction):
+
+        ##just printing info for player
+        print(f'{TextCode.RED.value}----------Your turn {self.name}----------{TextCode.RESET.value}')
+        print(f'Current top card is {self.colorize_text_based_on_card_color(gameState["topCard"], gameState["topCard"])}')
+        print(gameState["isClockwise"])
+        if(gameState["isClockwise"]):
+            print(f'Turn direction: clockwise')
+        else:
+            print(f'Turn direction: counterclockwise')
+        print(f'Turn Order: {gameState["turnOrder"]}')
+
+        ## handle special actions for turn
         if(specialAction == card.VALUE.DRAW2):
             print(f"player {self.name} drawing 2 cards")
             game.draw_cards(self, 2)
@@ -79,15 +89,19 @@ class HumanPlayer(Player):
             print(f"New Hand {self.hand}")
             return
         
+        ## tell player current hand
         handStr = ''
         for i in range(len(self.hand)):
             handStr += f"{str(i)}: {self.colorize_text_based_on_card_color(f'{self.hand[i].__repr__()}', self.hand[i])} "
         print(f'Current hand: {handStr}')
+
+
         moves = game.get_valid_moves(self)
         if(len(moves) == 0):
             print(f"You have no valid moves and have to draw {self.hand}")
             game.draw_card(self)
         else:
+           ##player choosing move
            while(True):
                 moveStr = 'Valid moves:'
                 moveStrAppend = ''
@@ -95,9 +109,10 @@ class HumanPlayer(Player):
                    moveStrAppend += f" {move}: {self.colorize_text_based_on_card_color(f'{self.hand[move].__repr__()}', self.hand[move])}"
                    
                 print(f'{moveStr + moveStrAppend}')
+                ##make sure input is integer and a valid move
                 try:
-                    choice = int(input("Select number from valid choices above"))
-                    print(f'You chose to play {self.hand[choice]}')
+                    choice = int(input("Select number from valid choices above: "))
+                    print(f"You chose to play {self.colorize_text_based_on_card_color(f'{self.hand[choice].__repr__()}', self.hand[choice])}")
                     if(not choice in moves):
                         raise ValueError()
                     cardToPlay = self.hand.pop(choice)
@@ -105,7 +120,6 @@ class HumanPlayer(Player):
                     break
                 except ValueError:
                     print("Please enter a valid number for move")
-        print(self.card_count())
 
     def colorize_text_based_on_card_color(self, text, c):
         colorText = ''

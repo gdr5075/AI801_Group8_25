@@ -1,19 +1,22 @@
 from uno_package import deck, player, card
 import random
+import time
 
 class Game:
-    def __init__(self, players):
+    def __init__(self, players, hasHuman):
         self.deck = deck.UnoMainDeck()
         self.playPile = []
         self.players = players
         self.winning_player = None
         self.turn_count = 0
         self.isClockwise = True
-        self.currentPlayer = 0
+        self.hasHuman = hasHuman
         ## this is in the case of draw4 or draw2, need a way to tell player
         self.nextPlayerAction = None
-        ## decide turn order randomly
+        ## decide turn order randomly and set first player
         random.shuffle(players)
+        ## setting to negative 1 because of how the gameplay loop is currently
+        self.currentPlayer = -1
 
         ## deal initial hands
         for player in players:
@@ -31,16 +34,20 @@ class Game:
 
         #self.print_status()
 
+    ##TODO: implement game state to send to player
     def play(self):
         print(f'beginning top card {self.get_top_play_card()}')
+        self.get_current_game_state()
         while self.is_game_over() == False and self.turn_count < 2000:
             self.turn_count+=1
             print(f"Turn {self.turn_count}")
-            self.get_next_player().play(self, self.nextPlayerAction)
+            self.get_next_player().play(self, self.get_current_game_state(), self.nextPlayerAction)
             self.handle_special_cards()
             #print(f'current top card {self.get_top_play_card()}')
             if(self.deck.is_empty()):
                 self.add_play_pile_to_main_deck()
+            if(self.hasHuman):
+                time.sleep(1)
         if(self.winning_player != None):
             print(f"{self.winning_player.name} won the game")
         return self.winning_player
@@ -67,6 +74,21 @@ class Game:
                 self.winning_player = player
                 return True
         return False
+    
+    ## get game's current state
+    ## state = [topCard, [player_hand_counts]]
+    def get_current_game_state(self):
+        currentState = {
+            "topCard": self.get_top_play_card(),
+            "handCounts": [],
+            "isClockwise": self.isClockwise,
+            "turnOrder": []
+        }
+        for p in self.players:
+            hand = {"name": p.name, "count": p.card_count()}
+            currentState["handCounts"].append(hand)
+            currentState["turnOrder"].append(p.name)
+        return currentState
 
     #todo - make sure this leaves the last card in play
     def add_play_pile_to_main_deck(self):
@@ -139,11 +161,9 @@ class Game:
 
     ## this handles cards in the deck that have special effects
     def handle_special_cards(self):
-
         if(self.get_top_play_card().value == card.VALUE.REVERSE):
             self.isClockwise = not self.isClockwise
             return
-        ## think about changing skip to act like draw2 and draw4 if we want negative reward for being skipped?
         if(self.get_top_play_card().value == card.VALUE.SKIP):
             self.get_next_player()
             return
