@@ -18,7 +18,6 @@ class Game:
         ## setting to negative 1 because of how the gameplay loop is currently
         self.currentPlayer = -1
 
-        self.skip_active = False
 
         ## deal initial hands
         for player in players:
@@ -43,8 +42,7 @@ class Game:
         while self.is_game_over() == False and self.turn_count < 2000:
             self.turn_count+=1
             print(f"Turn {self.turn_count}")
-            self.get_next_player().play(self, self.get_current_game_state(), self.nextPlayerAction) #Get next player always returns the actual next player who can move, and after they have moved we should clear the nextPlayerAction
-            self.nextPlayerAction = None
+            self.get_next_player().play(self, self.get_current_game_state())
             self.handle_special_cards()
             #print(f'current top card {self.get_top_play_card()}')
             if(self.deck.is_empty()):
@@ -57,23 +55,38 @@ class Game:
         
     def get_next_player(self):
         direction = 1 if self.isClockwise else -1
-
         self.currentPlayer += direction
-        if(self.skip_active): #Go another player
-            print(f"Skipping {self.players[self.currentPlayer].name}")
-            self.currentPlayer += direction
-            self.skip_active = False
 
+        self.handle_player_limits()
+        if(self.nextPlayerAction != None):
+            match (self.nextPlayerAction):
+                case card.VALUE.SKIP:
+                    print(f"Skipping {self.players[self.currentPlayer].name}")
+                    self.currentPlayer += direction
+                    self.nextPlayerAction = None
+                case card.VALUE.DRAW2:
+                    self.draw_cards(self.players[self.currentPlayer], 2)
+                    self.currentPlayer += direction
+                    self.nextPlayerAction = None
+                case card.VALUE.DRAW4:
+                    self.draw_cards(self.players[self.currentPlayer], 4)
+                    self.currentPlayer += direction
+                    self.nextPlayerAction = None
 
+        self.handle_player_limits()
+
+        return self.players[self.currentPlayer]
+
+    def handle_player_limits(self):
         #Handle Overflow
         if(self.currentPlayer > self.players.__len__()-1):
-            self.currentPlayer -= (self.players.__len__()-1)
+            self.currentPlayer -= (self.players.__len__())
+            print(f"Handled overflow")
 
         #Handle Underflow
         if(self.currentPlayer < 0):
-            self.currentPlayer += (self.players.__len__()-1)
-
-        return self.players[self.currentPlayer]
+            self.currentPlayer += (self.players.__len__())
+            print(f"Handled under")
 
     def is_game_over(self):
         for player in self.players:
@@ -168,21 +181,27 @@ class Game:
 
     ## this handles cards in the deck that have special effects
     def handle_special_cards(self):
-        if(self.get_top_play_card().value == card.VALUE.REVERSE):
-            self.isClockwise = not self.isClockwise
-            return
-        if(self.get_top_play_card().value == card.VALUE.SKIP):
-            self.skip_active = True
-            return
-        if(self.get_top_play_card().value == card.VALUE.DRAW2):
-            if(self.nextPlayerAction == None):
+
+        #Handle Reverse
+        top = self.get_top_play_card()
+        match (top.value):
+
+            case card.VALUE.REVERSE:
+                self.isClockwise = not self.isClockwise
+                return
+
+            case card.VALUE.SKIP:
+                self.nextPlayerAction = card.VALUE.SKIP
+                return
+
+            case card.VALUE.DRAW2:
                 self.nextPlayerAction = card.VALUE.DRAW2
-            else:
-                self.nextPlayerAction = None
-            return
-        if(self.get_top_play_card().value == card.VALUE.DRAW4):
-            if(self.nextPlayerAction == None):
+                return
+
+            case card.VALUE.DRAW4:
                 self.nextPlayerAction = card.VALUE.DRAW4
-            else:
-                self.nextPlayerAction = None
-            return
+                return
+
+            case _:
+                #No Action to take
+                return

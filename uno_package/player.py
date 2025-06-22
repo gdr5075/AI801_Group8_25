@@ -7,16 +7,8 @@ class Player:
         self.name = name
         self.hand = []
 
-    def play(self, game, gameState, specialAction):
+    def play(self, game, gameState):
         print(f"Player {self.name} is currently playing")
-        if(specialAction == card.VALUE.DRAW2):
-            print(f"player {self.name} drawing 2 cards")
-            game.draw_cards(self, 2)
-            return
-        elif(specialAction == card.VALUE.DRAW4):
-            print(f"player {self.name} drawing 4 cards")
-            game.draw_cards(self, 4)
-            return
         
         #self.show_hand()
         moves = game.get_valid_moves(self)
@@ -65,7 +57,7 @@ class HumanPlayer(Player):
     def __init__(self, name):
         super().__init__(name)
 
-    def play(self, game, gameState, specialAction):
+    def play(self, game, gameState):
 
         ##just printing info for player
         print(f'{TextCode.RED.value}----------Your turn {self.name}----------{TextCode.RESET.value}')
@@ -76,18 +68,7 @@ class HumanPlayer(Player):
         else:
             print(f'Turn direction: counterclockwise')
         print(f'Turn Order: {gameState["turnOrder"]}')
-
-        ## handle special actions for turn
-        if(specialAction == card.VALUE.DRAW2):
-            print(f"player {self.name} drawing 2 cards")
-            game.draw_cards(self, 2)
-            print(f"New Hand {self.hand}")
-            return
-        elif(specialAction == card.VALUE.DRAW4):
-            print(f"player {self.name} drawing 4 cards")
-            game.draw_cards(self, 4)
-            print(f"New Hand {self.hand}")
-            return
+        print(f'Hand Counts {gameState["handCounts"]}')
         
         ## tell player current hand
         handStr = ''
