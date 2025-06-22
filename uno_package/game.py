@@ -18,6 +18,8 @@ class Game:
         ## setting to negative 1 because of how the gameplay loop is currently
         self.currentPlayer = -1
 
+        self.skip_active = False
+
         ## deal initial hands
         for player in players:
             self.deal_cards(player, 7)
@@ -41,7 +43,8 @@ class Game:
         while self.is_game_over() == False and self.turn_count < 2000:
             self.turn_count+=1
             print(f"Turn {self.turn_count}")
-            self.get_next_player().play(self, self.get_current_game_state(), self.nextPlayerAction)
+            self.get_next_player().play(self, self.get_current_game_state(), self.nextPlayerAction) #Get next player always returns the actual next player who can move, and after they have moved we should clear the nextPlayerAction
+            self.nextPlayerAction = None
             self.handle_special_cards()
             #print(f'current top card {self.get_top_play_card()}')
             if(self.deck.is_empty()):
@@ -53,18 +56,22 @@ class Game:
         return self.winning_player
         
     def get_next_player(self):
-        ## clockwise increment currentPlayer by 1
-        if(self.isClockwise):
-            if(self.currentPlayer < self.players.__len__() - 1):
-                self.currentPlayer += 1
-            else:
-                self.currentPlayer = 0
-        ## counterClockwise decrement currentPlayer by 1
-        else:
-            if(self.currentPlayer > 0):
-                self.currentPlayer -= 1
-            else:
-                self.currentPlayer = self.players.__len__() - 1
+        direction = 1 if self.isClockwise else -1
+
+        self.currentPlayer += direction
+        if(self.skip_active): #Go another player
+            print(f"Skipping {self.players[self.currentPlayer].name}")
+            self.currentPlayer += direction
+            self.skip_active = False
+
+
+        #Handle Overflow
+        if(self.currentPlayer > self.players.__len__()-1):
+            self.currentPlayer -= (self.players.__len__()-1)
+
+        #Handle Underflow
+        if(self.currentPlayer < 0):
+            self.currentPlayer += (self.players.__len__()-1)
 
         return self.players[self.currentPlayer]
 
@@ -165,7 +172,7 @@ class Game:
             self.isClockwise = not self.isClockwise
             return
         if(self.get_top_play_card().value == card.VALUE.SKIP):
-            self.get_next_player()
+            self.skip_active = True
             return
         if(self.get_top_play_card().value == card.VALUE.DRAW2):
             if(self.nextPlayerAction == None):
