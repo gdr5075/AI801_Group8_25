@@ -12,14 +12,11 @@ class Player:
         
         #self.show_hand()
         moves = game.get_valid_moves(self)
-        if(len(moves) == 0):
-            print(f"player {self.name} is drawing a card")
-            game.draw_card(self)
-        else:
-            idx = random.choice(moves)
-            cardToPlay = self.hand.pop(idx)
-            print(f"player {self.name} playing {cardToPlay}")
-            game.play_card(cardToPlay)
+
+        idx = random.choice(moves)
+        cardToPlay = self.hand.pop(idx)
+        print(f"player {self.name} playing {cardToPlay}")
+        game.play_card(cardToPlay)
 
 
     def add_to_hand(self, cards):
@@ -78,29 +75,25 @@ class HumanPlayer(Player):
 
 
         moves = game.get_valid_moves(self)
-        if(len(moves) == 0):
-            print(f"You have no valid moves and have to draw {self.hand}")
-            game.draw_card(self)
-        else:
-           ##player choosing move
-           while(True):
-                moveStr = 'Valid moves:'
-                moveStrAppend = ''
-                for move in moves:
-                   moveStrAppend += f" {move}: {self.colorize_text_based_on_card_color(f'{self.hand[move].__repr__()}', self.hand[move])}"
-                   
-                print(f'{moveStr + moveStrAppend}')
-                ##make sure input is integer and a valid move
-                try:
-                    choice = int(input("Select number from valid choices above: "))
-                    print(f"You chose to play {self.colorize_text_based_on_card_color(f'{self.hand[choice].__repr__()}', self.hand[choice])}")
-                    if(not choice in moves):
-                        raise ValueError()
-                    cardToPlay = self.hand.pop(choice)
-                    game.play_card(cardToPlay)
-                    break
-                except ValueError:
-                    print("Please enter a valid number for move")
+        ##player choosing move
+        while(True):
+            moveStr = 'Valid moves:'
+            moveStrAppend = ''
+            for move in moves:
+                moveStrAppend += f" {move}: {self.colorize_text_based_on_card_color(f'{self.hand[move].__repr__()}', self.hand[move])}"
+
+            print(f'{moveStr + moveStrAppend}')
+            ##make sure input is integer and a valid move
+            try:
+                choice = int(input("Select number from valid choices above: "))
+                print(f"You chose to play {self.colorize_text_based_on_card_color(f'{self.hand[choice].__repr__()}', self.hand[choice])}")
+                if(not choice in moves):
+                    raise ValueError()
+                cardToPlay = self.hand.pop(choice)
+                game.play_card(cardToPlay)
+                break
+            except ValueError:
+                print("Please enter a valid number for move")
 
     def colorize_text_based_on_card_color(self, text, c):
         colorText = ''

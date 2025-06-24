@@ -42,7 +42,8 @@ class Game:
         while self.is_game_over() == False and self.turn_count < 2000:
             self.turn_count+=1
             print(f"Turn {self.turn_count}")
-            self.get_next_player().play(self, self.get_current_game_state())
+            self.execute_player_turn(self.get_next_player())
+
             self.handle_special_cards()
             #print(f'current top card {self.get_top_play_card()}')
             if(self.deck.is_empty()):
@@ -53,6 +54,24 @@ class Game:
             print(f"{self.winning_player.name} won the game")
         return self.winning_player
         
+    def execute_player_turn(self, player):
+        #We handle special cards after a player plays them, so by the time we get here we're only concerned
+        #with what the next valid player is going to do
+
+        #1 - Check play options
+        moves = self.get_valid_moves(player)
+        if(len(moves) == 0):
+            print(f"{player.name} has no valid moves and has to draw: {player.hand}")
+            self.draw_card(player)
+            print(f" {player.name} drew so now their hand is: {player.hand}")
+            moves = self.get_valid_moves(player) #Refresh moves
+
+        #If player has options, let them move
+        if(len(moves) > 0):
+            player.play(self, self.get_current_game_state())
+
+
+
     def get_next_player(self):
         direction = 1 if self.isClockwise else -1
         self.currentPlayer += direction
@@ -81,12 +100,12 @@ class Game:
         #Handle Overflow
         if(self.currentPlayer > self.players.__len__()-1):
             self.currentPlayer -= (self.players.__len__())
-            print(f"Handled overflow")
+            #print(f"Handled overflow")
 
         #Handle Underflow
         if(self.currentPlayer < 0):
             self.currentPlayer += (self.players.__len__())
-            print(f"Handled under")
+            #print(f"Handled under")
 
     def is_game_over(self):
         for player in self.players:
@@ -158,8 +177,9 @@ class Game:
     def get_top_play_card(self):
         return self.playPile[self.playPile.__len__()-1]
 
-    def play_card(self, card):
-        self.playPile.append(card)
+    def play_card(self, play_card):
+        play_card.value == card.VALUE.SKIP
+        self.playPile.append(play_card)
 
     ## gets a card from the deck
     ## if empty after, call method to shuffle playpile back into deck
@@ -172,6 +192,7 @@ class Game:
     ## draws a single card from the deck
     def draw_card(self, player):
         player.hand.append(self.draw_card_from_deck())
+
 
     ## draws multiple cards from the deck
     ## useful for draw4 and draw2
