@@ -42,8 +42,11 @@ class Game:
         while self.is_game_over() == False and self.turn_count < 2000:
             self.turn_count+=1
             print(f"Turn {self.turn_count}")
-            self.execute_player_turn(self.get_next_player())
-            self.handle_special_cards()
+            next_player = self.get_next_player()
+            card_played = self.execute_player_turn(next_player)
+            if card_played:
+                #only handle special cards if the player actually played
+                self.handle_special_cards()
             #print(f'current top card {self.get_top_play_card()}')
             if(self.deck.is_empty()):
                 self.add_play_pile_to_main_deck()
@@ -68,7 +71,9 @@ class Game:
         #If player has options, let them move
         if(len(moves) > 0):
             player.play(self, self.get_current_game_state())
+            return True
 
+        return False
 
 
     def get_next_player(self):
@@ -87,13 +92,12 @@ class Game:
                     self.draw_cards(self.players[self.currentPlayer], 2)
                     self.currentPlayer += direction
                     self.nextPlayerAction = None
-                    return
+
                 case card.VALUE.DRAW4:
                     print(f"{self.players[self.currentPlayer].name} drawing 4 cards")
                     self.draw_cards(self.players[self.currentPlayer], 4)
                     self.currentPlayer += direction
                     self.nextPlayerAction = None
-                    return
 
         self.handle_player_limits()
 
@@ -181,7 +185,6 @@ class Game:
         return self.playPile[self.playPile.__len__()-1]
 
     def play_card(self, play_card):
-        play_card.value == card.VALUE.SKIP
         self.playPile.append(play_card)
 
     ## gets a card from the deck
