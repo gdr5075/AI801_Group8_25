@@ -43,7 +43,6 @@ class Game:
             self.turn_count+=1
             print(f"Turn {self.turn_count}")
             self.execute_player_turn(self.get_next_player())
-
             self.handle_special_cards()
             #print(f'current top card {self.get_top_play_card()}')
             if(self.deck.is_empty()):
@@ -84,13 +83,17 @@ class Game:
                     self.currentPlayer += direction
                     self.nextPlayerAction = None
                 case card.VALUE.DRAW2:
+                    print(f"{self.players[self.currentPlayer].name} drawing 2 cards")
                     self.draw_cards(self.players[self.currentPlayer], 2)
                     self.currentPlayer += direction
                     self.nextPlayerAction = None
+                    return
                 case card.VALUE.DRAW4:
+                    print(f"{self.players[self.currentPlayer].name} drawing 4 cards")
                     self.draw_cards(self.players[self.currentPlayer], 4)
                     self.currentPlayer += direction
                     self.nextPlayerAction = None
+                    return
 
         self.handle_player_limits()
 
