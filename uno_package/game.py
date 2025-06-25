@@ -14,7 +14,6 @@ class Game:
         ## this is in the case of draw4 or draw2, need a way to tell player
         self.nextPlayerAction = None
         ## decide turn order randomly and set first player
-        random.shuffle(players)
         ## setting to negative 1 because of how the gameplay loop is currently
         self.currentPlayer = -1
 
@@ -63,9 +62,9 @@ class Game:
         #1 - Check play options
         moves = self.get_valid_moves(player)
         if(len(moves) == 0):
-            print(f"{player.name} has no valid moves and has to draw: {player.hand}")
+            print(f"{player.name} has no valid moves and has to draw: {player.get_hand()}")
             self.draw_card(player)
-            print(f" {player.name} drew so now their hand is: {player.hand}")
+            print(f" {player.name} drew so now their hand is: {player.get_hand()}")
             moves = self.get_valid_moves(player) #Refresh moves
 
         #If player has options, let them move
@@ -170,8 +169,8 @@ class Game:
         valid_moves = []
         play_top = self.get_top_play_card()
 
-        for i in range(len(player.hand)):
-            pCard = player.hand[i]
+        for i in range(len(player.get_hand())):
+            pCard = player.get_hand()[i]
             ## TODO: need to handle this better, but for now just go through the loop to handle wild on top
             if play_top.color == card.COLOR.WILD:
                 valid_moves.append(i)
@@ -197,7 +196,7 @@ class Game:
 
     ## draws a single card from the deck
     def draw_card(self, player):
-        player.hand.append(self.draw_card_from_deck())
+        player.get_hand().append(self.draw_card_from_deck())
 
 
     ## draws multiple cards from the deck
@@ -205,6 +204,10 @@ class Game:
     def draw_cards(self, player, number):
         for i in range(number):
             self.draw_card(player)
+
+
+    def shuffle_players(self):
+        random.shuffle(self.players)
 
     ## this handles cards in the deck that have special effects
     def handle_special_cards(self):

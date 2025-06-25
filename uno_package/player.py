@@ -38,7 +38,7 @@ class Player:
     def card_count(self):
         return self.hand.__len__()
 
-    def hand(self):
+    def get_hand(self):
         return self.hand
     
 ##ansi codes to color text
