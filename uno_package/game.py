@@ -13,9 +13,9 @@ class Game:
         self.hasHuman = hasHuman
         ## this is in the case of draw4 or draw2, need a way to tell player
         self.nextPlayerAction = None
-        ## decide turn order randomly and set first player
         ## setting to negative 1 because of how the gameplay loop is currently
         self.currentPlayer = -1
+        self.wildColor = None
 
 
         ## deal initial hands
@@ -25,7 +25,7 @@ class Game:
         ## get the top card, can't be either wild card
         while True:
             c = self.deck.pop()
-            if c.value == card.VALUE.DRAW4 or c.value == card.VALUE.NORMAL:
+            if c.color == card.COLOR.WILD:
                 self.playPile.append(c)
             else: 
                 self.add_play_pile_to_main_deck()
@@ -80,12 +80,17 @@ class Game:
         self.currentPlayer += direction
 
         self.handle_player_limits()
+        # if the top card is no longer a wild card, reset the chosen color
+        if(not self.get_top_play_card().color == card.COLOR.WILD):
+            self.wildColor = None
+        
         if(self.nextPlayerAction != None):
             match (self.nextPlayerAction):
                 case card.VALUE.SKIP:
                     print(f"Skipping {self.players[self.currentPlayer].name}")
                     self.currentPlayer += direction
                     self.nextPlayerAction = None
+
                 case card.VALUE.DRAW2:
                     print(f"{self.players[self.currentPlayer].name} drawing 2 cards")
                     self.draw_cards(self.players[self.currentPlayer], 2)
@@ -125,6 +130,7 @@ class Game:
     def get_current_game_state(self):
         currentState = {
             "topCard": self.get_top_play_card(),
+            "wildColor": self.wildColor,
             "handCounts": [],
             "isClockwise": self.isClockwise,
             "turnOrder": []
@@ -171,11 +177,7 @@ class Game:
 
         for i in range(len(player.get_hand())):
             pCard = player.get_hand()[i]
-            ## TODO: need to handle this better, but for now just go through the loop to handle wild on top
-            if play_top.color == card.COLOR.WILD:
-                valid_moves.append(i)
-                #print(f"Valid card from {player.name} - they have a {pCard.color} {pCard.value} and the play top is {play_top.color} {play_top.value}")
-            elif pCard.color == play_top.color or pCard.value == play_top.value or pCard.color == card.COLOR.WILD:
+            if pCard.color == play_top.color or pCard.value == play_top.value or pCard.color == card.COLOR.WILD or pCard.color == self.wildColor:
                 #print(f"Valid card from {player.name} - they have a {pCard.color} {pCard.value} and the play top is {play_top.color} {play_top.value}")
                 valid_moves.append(i)
         return valid_moves
@@ -185,6 +187,9 @@ class Game:
 
     def play_card(self, play_card):
         self.playPile.append(play_card)
+
+    def choose_wild_color(self, color):
+        self.wildColor = color
 
     ## gets a card from the deck
     ## if empty after, call method to shuffle playpile back into deck

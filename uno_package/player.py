@@ -1,6 +1,5 @@
 import random
-from uno_package import card
-from enum import Enum
+from uno_package import card, utils
 
 class Player:
     def __init__(self, name):
@@ -17,6 +16,10 @@ class Player:
         cardToPlay = self.hand.pop(idx)
         print(f"player {self.name} playing {cardToPlay}")
         game.play_card(cardToPlay)
+        if(cardToPlay.color == card.COLOR.WILD):
+            color = random.choice(utils.normal_color_list)
+            game.choose_wild_color(color)
+            print(f"Wild card played, {self.name} chose {utils.colorize_text_by_color_name(color, color)} as the next color")
 
 
     def add_to_hand(self, cards):
@@ -41,15 +44,6 @@ class Player:
     def get_hand(self):
         return self.hand
     
-##ansi codes to color text
-class TextCode(Enum):
-    RED = "\033[38;5;9m"
-    GREEN = "\033[38;5;76m"
-    BLUE = "\033[38;5;27m"
-    YELLOW = "\033[38;5;226m"
-    GRAY = "\033[38;5;249m"
-    RESET = "\033[0m"
-    
 class HumanPlayer(Player):
     def __init__(self, name):
         super().__init__(name)
@@ -57,9 +51,12 @@ class HumanPlayer(Player):
     def play(self, game, gameState):
 
         ##just printing info for player
-        print(f'{TextCode.RED.value}----------Your turn {self.name}----------{TextCode.RESET.value}')
-        print(f'Current top card is {self.colorize_text_based_on_card_color(gameState["topCard"], gameState["topCard"])}')
-        print(gameState["isClockwise"])
+        print(f'{utils.TextCode.RED.value}----------Your turn {self.name}----------{utils.TextCode.RESET.value}')
+        if(gameState["topCard"].color == card.COLOR.WILD):
+            print(f'Current top card is {utils.colorize_text_based_on_card_color(gameState["topCard"], gameState["topCard"])}')
+            print(f'Chosen color is {utils.colorize_text_by_color_name(gameState["wildColor"], gameState["wildColor"])}')
+        else:
+            print(f'Current top card is {utils.colorize_text_based_on_card_color(gameState["topCard"], gameState["topCard"])}')
         if(gameState["isClockwise"]):
             print(f'Turn direction: clockwise')
         else:
@@ -70,7 +67,7 @@ class HumanPlayer(Player):
         ## tell player current hand
         handStr = ''
         for i in range(len(self.hand)):
-            handStr += f"{str(i)}: {self.colorize_text_based_on_card_color(f'{self.hand[i].__repr__()}', self.hand[i])} "
+            handStr += f"{str(i)}: {utils.colorize_text_based_on_card_color(f'{self.hand[i].__repr__()}', self.hand[i])} "
         print(f'Current hand: {handStr}')
 
 
@@ -80,31 +77,31 @@ class HumanPlayer(Player):
             moveStr = 'Valid moves:'
             moveStrAppend = ''
             for move in moves:
-                moveStrAppend += f" {move}: {self.colorize_text_based_on_card_color(f'{self.hand[move].__repr__()}', self.hand[move])}"
+                moveStrAppend += f" {move}: {utils.colorize_text_based_on_card_color(f'{self.hand[move].__repr__()}', self.hand[move])}"
 
             print(f'{moveStr + moveStrAppend}')
             ##make sure input is integer and a valid move
+            cardToPlay = None
             try:
                 choice = int(input("Select number from valid choices above: "))
-                print(f"You chose to play {self.colorize_text_based_on_card_color(f'{self.hand[choice].__repr__()}', self.hand[choice])}")
+                print(f"You chose to play {utils.colorize_text_based_on_card_color(f'{self.hand[choice].__repr__()}', self.hand[choice])}")
                 if(not choice in moves):
                     raise ValueError()
                 cardToPlay = self.hand.pop(choice)
                 game.play_card(cardToPlay)
-                break
             except ValueError:
                 print("Please enter a valid number for move")
 
-    def colorize_text_based_on_card_color(self, text, c):
-        colorText = ''
-        if(c.color == card.COLOR.BLUE):
-            colorText = f'{TextCode.BLUE.value}{text}{TextCode.RESET.value}'
-        elif(c.color == card.COLOR.RED):
-            colorText = f'{TextCode.RED.value}{text}{TextCode.RESET.value}'
-        elif(c.color == card.COLOR.YELLOW):
-            colorText = f'{TextCode.YELLOW.value}{text}{TextCode.RESET.value}'
-        elif(c.color == card.COLOR.GREEN):
-            colorText = f'{TextCode.GREEN.value}{text}{TextCode.RESET.value}'
-        elif(c.color == card.COLOR.WILD):
-            colorText = f'{TextCode.GRAY.value}{text}{TextCode.RESET.value}'
-        return colorText
+            ## if we chose to play a wild card, need to choose a color
+            if(cardToPlay.color == card.COLOR.WILD):
+                try:
+                    colorChoiceStr = ''
+                    for i in range(len(utils.normal_color_list)):
+                        colorChoiceStr += f" {i}: {utils.colorize_text_by_color_name(utils.normal_color_list[i], utils.normal_color_list[i])}"
+                    print(colorChoiceStr)
+                    choice = int(input("Select number from valid choices above to choose color: "))
+                    game.choose_wild_color(utils.normal_color_list[choice])
+                    print(f'You chose the color {utils.colorize_text_by_color_name(utils.normal_color_list[choice], utils.normal_color_list[choice])}')
+                except ValueError:
+                    print("Please enter a valid number for the color")
+            break
