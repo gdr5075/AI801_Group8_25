@@ -1,7 +1,21 @@
 from uno_package import card
 from enum import Enum
+import numpy as np
 
 normal_color_list = [card.COLOR.BLUE, card.COLOR.GREEN, card.COLOR.YELLOW, card.COLOR.RED]
+
+COLOR_MAP = {card.COLOR.RED.value: 0, card.COLOR.GREEN.value: 1, card.COLOR.BLUE.value: 2, card.COLOR.YELLOW.value: 3}
+
+# a map of trait to its index
+VALUE_MAP = {card.VALUE.ZERO.value: 0, card.VALUE.ONE.value: 1, card.VALUE.TWO.value: 2,
+            card.VALUE.THREE.value: 3, card.VALUE.FOUR.value: 4, card.VALUE.FIVE.value: 5,
+            card.VALUE.SIX.value: 6, card.VALUE.SEVEN.value: 7, card.VALUE.EIGHT.value: 8,
+            card.VALUE.NINE.value: 9, card.VALUE.SKIP.value: 10, card.VALUE.REVERSE.value: 11,
+            card.VALUE.DRAW2.value: 12, card.VALUE.NORMAL.value: 13, card.VALUE.DRAW4.value: 14}
+
+WILD = ['r-wild', 'g-wild', 'b-wild', 'y-wild']
+
+WILD_DRAW_4 = ['r-wild_draw_4', 'g-wild_draw_4', 'b-wild_draw_4', 'y-wild_draw_4']
 
 ##ansi codes to color text
 class TextCode(Enum):
@@ -43,3 +57,38 @@ def colorize_text_by_color_name(text, color):
     elif(color == card.COLOR.WILD):
         colorText = f'{TextCode.GRAY.value}{text}{TextCode.RESET.value}'
     return colorText
+
+
+def hand_to_dict(hand):
+    handDict = {}
+    for card in hand:
+        if card not in handDict:
+            handDict[card] = 1
+        else:
+            handDict[card] += 1
+    return handDict
+
+## 
+def hand_to_plane(plane, hand):
+    plane[0] = np.ones((4, 15), dtype=int)
+    hand = hand_to_dict(hand)
+    for card, count in hand.items():
+        card_info = card.split('-')
+        color = COLOR_MAP[card_info[0]]
+        trait = VALUE_MAP[card_info[1]]
+        if trait >= 13:
+            if plane[1][0][trait] == 0:
+                for index in range(4):
+                    plane[0][index][trait] = 0
+                    plane[1][index][trait] = 1
+        else:
+            plane[0][color][trait] = 0
+            plane[count][color][trait] = 1
+    return plane
+
+def target_to_plane(plane, target):
+    target_info = target.split('-')
+    color = COLOR_MAP[target_info[0]]
+    trait = VALUE_MAP[target_info[1]]
+    plane[color][trait] = 1
+    return plane

@@ -17,7 +17,6 @@ class Game:
         self.currentPlayer = -1
         self.wildColor = None
 
-
         ## deal initial hands
         for player in players:
             self.deal_cards(player, 7)
@@ -34,10 +33,8 @@ class Game:
 
         #self.print_status()
 
-    ##TODO: implement game state to send to player
     def play(self):
         print(f'beginning top card {self.get_top_play_card()}')
-        self.get_current_game_state()
         while self.is_game_over() == False and self.turn_count < 2000:
             self.turn_count+=1
             print(f"Turn {self.turn_count}")
@@ -46,7 +43,6 @@ class Game:
             if card_played:
                 #only handle special cards if the player actually played
                 self.handle_special_cards()
-            #print(f'current top card {self.get_top_play_card()}')
             if(self.deck.is_empty()):
                 self.add_play_pile_to_main_deck()
             if(self.hasHuman):
@@ -69,7 +65,7 @@ class Game:
 
         #If player has options, let them move
         if(len(moves) > 0):
-            player.play(self, self.get_current_game_state())
+            player.play(self)
             return True
 
         return False
@@ -125,23 +121,21 @@ class Game:
                 return True
         return False
     
-    ## get game's current state
-    ## state = [topCard, [player_hand_counts]]
-    def get_current_game_state(self):
-        currentState = {
-            "topCard": self.get_top_play_card(),
-            "wildColor": self.wildColor,
-            "handCounts": [],
-            "isClockwise": self.isClockwise,
-            "turnOrder": []
-        }
-        for p in self.players:
-            hand = {"name": p.name, "count": p.card_count()}
-            currentState["handCounts"].append(hand)
-            currentState["turnOrder"].append(p.name)
-        return currentState
-
-    #todo - make sure this leaves the last card in play
+    def get_turn_order(self):
+        return [p.name for p in self.players]
+    
+    def get_turn_direction(self):
+        return 'clockwise' if self.isClockwise else 'counterclockwise'
+    
+    def get_hand_counts(self):
+        return [{"name": p.name, "count": p.card_count()} for p in self.players]
+    
+    def get_chosen_wild_color(self):
+        return self.wildColor
+    
+    def get_player_count(self):
+        return len(self.players)
+     
     def add_play_pile_to_main_deck(self):
         ## pop top card to leave on play pile
 

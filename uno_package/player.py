@@ -6,7 +6,7 @@ class Player:
         self.name = name
         self.hand = []
 
-    def play(self, game, gameState):
+    def play(self, game):
         print(f"Player {self.name} is currently playing")
         
         #self.show_hand()
@@ -48,21 +48,18 @@ class HumanPlayer(Player):
     def __init__(self, name):
         super().__init__(name)
 
-    def play(self, game, gameState):
+    def play(self, game):
 
         ##just printing info for player
         print(f'{utils.TextCode.RED.value}----------Your turn {self.name}----------{utils.TextCode.RESET.value}')
-        if(gameState["topCard"].color == card.COLOR.WILD):
-            print(f'Current top card is {utils.colorize_text_based_on_card_color(gameState["topCard"], gameState["topCard"])}')
-            print(f'Chosen color is {utils.colorize_text_by_color_name(gameState["wildColor"], gameState["wildColor"])}')
-        else:
-            print(f'Current top card is {utils.colorize_text_based_on_card_color(gameState["topCard"], gameState["topCard"])}')
-        if(gameState["isClockwise"]):
-            print(f'Turn direction: clockwise')
-        else:
-            print(f'Turn direction: counterclockwise')
-        print(f'Turn Order: {gameState["turnOrder"]}')
-        print(f'Hand Counts {gameState["handCounts"]}')
+        
+        print(f'Current top card is {utils.colorize_text_based_on_card_color(game.get_top_play_card(), game.get_top_play_card())}')
+        if(game.get_top_play_card().color == card.COLOR.WILD):
+           print(f'Chosen color is {utils.colorize_text_by_color_name(game.get_chosen_wild_color(), game.get_chosen_wild_color())}')
+
+        print(f'Turn direction: {game.get_turn_direction()}')
+        print(f'Turn Order: {game.get_turn_order()}')
+        print(f'Hand Counts {game.get_hand_counts()}')
         
         ## tell player current hand
         handStr = ''

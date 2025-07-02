@@ -1,6 +1,7 @@
-from uno_package import player, game
+from uno_package import player, game, state
 
 def main():
+    print(state.cardMatrix)
     for i in range(0,20):
         me = player.HumanPlayer('Zach')
         players = [me, player.Player('Frodo'), player.Player('Sauron'), player.Player('Gollum')]
