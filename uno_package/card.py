@@ -18,11 +18,11 @@ class VALUE(Enum):
     SEVEN = '7'
     EIGHT = '8'
     NINE = '9'
-    REVERSE = 'Reverse'
     SKIP = 'Skip'
+    REVERSE = 'Reverse'
     DRAW2 = 'Draw 2'
-    DRAW4 = 'Draw 4'
     NORMAL = 'Normal'
+    DRAW4 = 'Draw 4'
 
 class Card:
     def __init__(self, color, value, points):

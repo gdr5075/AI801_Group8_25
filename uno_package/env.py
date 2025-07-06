@@ -16,4 +16,5 @@ cardMatrix = np.zeros((4,4,15), dtype=int)
 class Env():
     def __init__(self, game):
         self.playerCount = game.get_player_count()
-        self.state = [[4,4,15] ]
+        self.stateShape = [[4,4,15] for _ in range(self.playerCount)]
+        self.actionShape = [None for _ in range(self.playerCount)]

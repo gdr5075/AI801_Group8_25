@@ -21,7 +21,9 @@ class Player:
             game.choose_wild_color(color)
             print(f"Wild card played, {self.name} chose {utils.colorize_text_by_color_name(color, color)} as the next color")
 
-
+    def clear_hand(self):
+        self.hand = []
+    
     def add_to_hand(self, cards):
         self.hand += cards
 
