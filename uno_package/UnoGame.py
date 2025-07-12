@@ -1,3 +1,4 @@
+from typing import Optional
 from uno_package import deck, player, card, utils
 import random
 import time
@@ -18,6 +19,7 @@ class GameEnv(gym.Env):
         ## setting to negative 1 because of how the gameplay loop is currently
         self.currentPlayer = -1
         self.wildColor = None
+        self.episodes = 2
 
         ## deal initial hands
         for player in players:
@@ -38,14 +40,17 @@ class GameEnv(gym.Env):
         for player in players:
             obsSpace[player.name] = gym.spaces.MultiDiscrete([5,15], dtype=int)
         obsSpace['played_cards'] = gym.spaces.MultiDiscrete([5,15], dtype=int)
-        obsSpace["top_card"] = gym.spaces.Text(self.get_top_play_card().__repr__())
-        obsSpace["clockwise"] = gym.spaces.Text("clockwise")
+        obsSpace["top_card"] = gym.spaces.Text()
+        obsSpace["chosen_color"] = gym.spaces.Text()
+        #obsSpace["clockwise"] = gym.spaces.Text()
         #obsSpace["hand_counts"] = gym.spaces.MultiDiscrete([len(self.players)], dtype=int)
         
         self.observation_space = gym.spaces.Dict(obsSpace)
         
-        ## rgby 0-9 skip, reverse, d2, wild, d4
-        self.action_space = gym.spaces.Sequence(61)
+        ## rgby 0-9 skip, reverse, d2
+        ## w normal d4
+        ## draw
+        self.action_space = gym.spaces.Sequence(55)
 
     # Convert internal state to observation format.  
     # returns dict with each player hand, played cards, top card, and current direction of play 
@@ -53,14 +58,16 @@ class GameEnv(gym.Env):
         """Convert internal state to observation format.
 
         Returns:
-            dict: Observation with agent and target positions
+            dict: Observation with agents' hands, played cards, top_card, clockwise
         """
         obsSpace = {}
         for player in self.players:
-            obsSpace[player.name] = utils.hand_to_dict(player.hand)
-        obsSpace['played_cards'] = gym.spaces.MultiDiscrete([5,15], dtype=int)
+            obsSpace[player.name] = utils.hand_to_state_rep(player.hand)
+        obsSpace['played_cards'] = utils.hand_to_state_rep(self.playPile)
         obsSpace["top_card"] = gym.spaces.Text(self.get_top_play_card().__repr__())
-        obsSpace["clockwise"] = gym.spaces.Text("clockwise")
+        obsSpace["chosen_color"] = gym.spaces.Text(self.wildColor.value)
+        #obsSpace["clockwise"] = gym.spaces.Text("clockwise" if self.isClockwise else "counterClockwise")
+        #obsSpace["hand_counts"] = gym.spaces.MultiDiscrete([p.count for p in self.players])
         return obsSpace
     
     ## TODO implement for debugging purposes https://gymnasium.farama.org/introduction/create_custom_env/
@@ -70,9 +77,6 @@ class GameEnv(gym.Env):
     ## used to start a new episode
     ## an episode in our case is a game
     def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
-        # IMPORTANT: Must call this first to seed the random number generator
-        #super().reset(seed=seed)
-
         self.deck = deck.UnoMainDeck()
         self.playPile = []
         self.winning_player = None
@@ -82,7 +86,7 @@ class GameEnv(gym.Env):
         self.currentPlayer = -1
         self.wildColor = None
 
-        #TODO: may want to test shuffling and not shuffling to see if going first makes a difference in agent's win %
+        #TODO: may want to test shuffling and not shuffling player order to see if going first makes a difference in agent's win %
 
         ## deal initial hands
         for player in self.players:
@@ -103,9 +107,58 @@ class GameEnv(gym.Env):
     
     ## contains core env logic. It takes an action and updates the env state and returns results
     ## args: action which is 0-60
-    def step(self, player, action):
-        pass
+    def step(self, player, action, playerDrewCard):
+        # convert player hand to the state representation
+        playerHand = utils.hand_to_state_rep(player.hand)
 
+        ## for action number, get card
+        cardAction = utils.action_to_card_rep(action)
+
+        ## create target state rep
+        target = utils.target_to_state_rep(cardAction)
+
+        ##check win
+        if np.equal(playerHand, np.zeros([5,15], dtype=int)):
+            self.winning_player = player
+
+        reward = 1 if self.winning_player != None else -.01
+
+        observation = self._get_obs()
+        info = self._get_info()
+        return observation, reward, 
+    
+    def test_play(self):
+        print(f'beginning top card {self.get_top_play_card()}')
+        for episode in range(self.episodes):
+            obs, info = self.reset()
+            done = False
+            while not done:
+                ## below should be in step()
+                nextPlayer = self.get_next_player()
+                action = nextPlayer.get_action(self, )
+                
+                # if tuple wild was played and color chosen
+                if isinstance(action, tuple):
+                    pass
+
+                    
+
+        while self.is_game_over() == False and self.turn_count < 2000:
+            self.turn_count+=1
+            print(f"Turn {self.turn_count}")
+            next_player = self.get_next_player()
+            card_played = self.execute_player_turn(next_player)
+            if card_played:
+                #only handle special cards if the player actually played
+                self.handle_special_cards()
+            if(self.deck.is_empty()):
+                self.add_play_pile_to_main_deck()
+            if(self.hasHuman):
+                time.sleep(1)
+        if(self.winning_player != None):
+            print(f"{self.winning_player.name} won the game")
+        return self.winning_player
+    
     def play(self):
         print(f'beginning top card {self.get_top_play_card()}')
         while self.is_game_over() == False and self.turn_count < 2000:

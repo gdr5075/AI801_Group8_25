@@ -21,6 +21,19 @@ class Player:
             game.choose_wild_color(color)
             print(f"Wild card played, {self.name} chose {utils.colorize_text_by_color_name(color, color)} as the next color")
 
+    def get_action(self, game, observation):
+        print(f"Player {self.name} is currently playing")
+        moves = game.get_valid_moves(self)
+        idx = random.choice(moves)
+        cardToPlay = self.hand.pop(idx)
+        print(f"player {self.name} playing {cardToPlay}")
+        if(cardToPlay.color == card.COLOR.WILD):
+            color = random.choice(utils.normal_color_list)
+            print(f"Wild card played, {self.name} chose {utils.colorize_text_by_color_name(color, color)} as the next color")
+            return cardToPlay, color
+
+        return cardToPlay
+    
     def clear_hand(self):
         self.hand = []
     
