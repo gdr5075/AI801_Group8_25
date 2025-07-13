@@ -53,6 +53,12 @@ class Player:
     def call_uno(self):
         pass
 
+    def get_card(self, card_rep):
+        for i in range(len(self.hand)):
+            if self.hand[i].__repr__() == card_rep:
+                return self.hand.pop(i)
+        return None
+
     def card_count(self):
         return self.hand.__len__()
 

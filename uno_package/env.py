@@ -135,9 +135,10 @@ class UnoEnvironment(AECEnv):
         # convert player hand to the state representation
         playerHand = utils.hand_to_state_rep(player.hand)
 
-        ## for action number, get card
-        ##cardAction = utils.action_to_card_rep(action)
-        ##actionNumber = utils.card_to_action_number(action)
+        #get card repr of action, get card from players hand and play it
+        playedCard = utils.action_to_card_rep(action)
+        self.play_card(self.agent_selection.get_card(playedCard))
+
 
         ##check win
         if np.equal(playerHand, np.zeros([5,15], dtype=int)):
@@ -151,7 +152,8 @@ class UnoEnvironment(AECEnv):
                     self.rewards[agent] -= 1
 
         self.rewards[agent] -= .01
-        self.__agent_selector.next()
+        #eventually want to have more rewards, maybe causing player with less cards to gain cards, especially if it is one card 
+        self.__agent_selector.next(direction)
         self.turn_count += 1
 
     def check_auto_action(self, direction):
