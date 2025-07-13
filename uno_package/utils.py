@@ -139,6 +139,9 @@ def hand_to_state_rep(hand):
         state_matrix[color][value] += count
     return state_matrix
 
+def get_state_non_zero_indices(state_matrix):
+    pass
+
 # def hand_to_state_rep(state_matrix, hand):
 #     state_matrix = np.zeros((5, 15), dtype=int)
 #     hand = hand_to_dict(hand) 

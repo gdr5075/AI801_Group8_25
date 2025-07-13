@@ -1,4 +1,4 @@
-import functools
+import functools, time, random
 from typing import Any, Optional
 import gymnasium as gym
 import numpy as np
@@ -14,7 +14,6 @@ class UnoAgentSelector(AgentSelector):
         self._current_agent = (self._current_agent + direction) % len(self.agent_order)
         self.selected_agent = self.agent_order[self._current_agent - 1]
         return self.selected_agent
-
 
 class UnoEnvironment(AECEnv):
     metadata = {
@@ -132,13 +131,19 @@ class UnoEnvironment(AECEnv):
     ## args: action which is 0-54
     def step(self, action, playerDrewCard):
         direction = 1 if self.isClockwise else -1
-        # convert player hand to the state representation
-        playerHand = utils.hand_to_state_rep(player.hand)
 
         #get card repr of action, get card from players hand and play it
-        playedCard = utils.action_to_card_rep(action)
-        self.play_card(self.agent_selection.get_card(playedCard))
+        playedCardRepr = utils.action_to_card_rep(action)
+        playedCard = self.agent_selection.get_card(playedCardRepr)
+        self.play_card(playedCard)
 
+        #check if card does something to next player
+        self.check_auto_action(direction, playedCard)
+
+        direction = 1 if self.isClockwise else -1
+
+        # convert player hand to the state representation
+        playerHand = utils.hand_to_state_rep(player.hand)
 
         ##check win
         if np.equal(playerHand, np.zeros([5,15], dtype=int)):
@@ -153,65 +158,38 @@ class UnoEnvironment(AECEnv):
 
         self.rewards[agent] -= .01
         #eventually want to have more rewards, maybe causing player with less cards to gain cards, especially if it is one card 
-        self.__agent_selector.next(direction)
+        #possible rewards, skipping next agent if they have 1 card, reverse away from next agent if they have 1 card, making the agent with less card draw
         self.turn_count += 1
+        self.agent_selection = self.__agent_selector.next(direction)
 
-    def check_auto_action(self, direction):
+    ## checks if special action happens to the next player
+    ## if it happens to a player, it will perform the action and/or skip their turn
+    def check_auto_action(self, direction, playedCard):
          # if the top card is no longer a wild card, reset the chosen color
         if(not self.get_top_play_card().color == card.COLOR.WILD):
             self.wildColor = None
         
-        if(self.nextPlayerAction != None):
-            match (self.nextPlayerAction):
-                case card.VALUE.SKIP:
-                    print(f"Skipping {self.players[self.currentPlayer].name}")
-                    self.currentPlayer += direction
-                    self.nextPlayerAction = None
+        match (playedCard.value):
+            case card.VALUE.REVERSE:
+                self.isClockwise = not self.isClockwise
+                print(f"Reversing turn order")
+                return
+            case card.VALUE.SKIP:
+                self.__agent_selector.next(direction)
+                print(f"Skipping {self.__agent_selector._current_agent.name}")
+                return
 
-                case card.VALUE.DRAW2:
-                    print(f"{self.players[self.currentPlayer].name} drawing 2 cards")
-                    self.draw_cards(self.players[self.currentPlayer], 2)
-                    self.currentPlayer += direction
-                    self.nextPlayerAction = None
+            case card.VALUE.DRAW2:
+                self.__agent_selector.next(direction)
+                self.draw_cards(self.__agent_selector._current_agent, 2)
+                print(f"{self.__agent_selector._current_agent.name} drawing 2 cards")
+                return
 
-                case card.VALUE.DRAW4:
-                    print(f"{self.players[self.currentPlayer].name} drawing 4 cards")
-                    self.draw_cards(self.players[self.currentPlayer], 4)
-                    self.currentPlayer += direction
-                    self.nextPlayerAction = None
-
-    
-    def test_play(self):
-        print(f'beginning top card {self.get_top_play_card()}')
-        for episode in range(self.episodes):
-            obs, info = self.reset()
-            done = False
-            while not done:
-                ## below should be in step()
-                nextPlayer = self.get_next_player()
-                action = nextPlayer.get_action(self, )
-                
-                # if tuple wild was played and color chosen
-                if isinstance(action, tuple):
-                    pass
-
-                    
-
-        while self.is_game_over() == False and self.turn_count < 2000:
-            self.turn_count+=1
-            print(f"Turn {self.turn_count}")
-            next_player = self.get_next_player()
-            card_played = self.execute_player_turn(next_player)
-            if card_played:
-                #only handle special cards if the player actually played
-                self.handle_special_cards()
-            if(self.deck.is_empty()):
-                self.add_play_pile_to_main_deck()
-            if(self.hasHuman):
-                time.sleep(1)
-        if(self.winning_player != None):
-            print(f"{self.winning_player.name} won the game")
-        return self.winning_player
+            case card.VALUE.DRAW4:
+                self.__agent_selector.next(direction)
+                self.draw_cards(self.__agent_selector._current_agent, 4)
+                print(f"{self.__agent_selector._current_agent.name} drawing 4 cards")
+                return
     
     def play(self):
         print(f'beginning top card {self.get_top_play_card()}')
@@ -388,9 +366,8 @@ class UnoEnvironment(AECEnv):
     ## draws multiple cards from the deck
     ## useful for draw4 and draw2
     def draw_cards(self, player, number):
-        for i in range(number):
+        for _ in range(number):
             self.draw_card(player)
-
 
     def shuffle_players(self):
         random.shuffle(self.players)
@@ -421,9 +398,6 @@ class UnoEnvironment(AECEnv):
             case _:
                 #No Action to take
                 return
-            
-    def _convert_to_dict(self, list_of_list):
-        return dict(zip(self.possible_agents, list_of_list))
 
     def render(self):
         pass
