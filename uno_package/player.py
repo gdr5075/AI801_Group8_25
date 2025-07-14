@@ -23,9 +23,11 @@ class Player:
 
     def get_action(self, game, observation):
         print(f"Player {self.name} is currently playing")
-        moves = game.get_valid_moves(self)
-        idx = random.choice(moves)
-        cardToPlay = self.hand[idx]
+        moves = utils.state_rep_to_action_numbers_list(observation['observation']['available_moves'])
+        if len(moves) == 0:
+            return utils.card_to_action_number('draw')
+        action = random.choice(moves)
+        cardToPlay = utils.action_to_card_rep(action)
         print(f"player {self.name} playing {cardToPlay}")
         if(cardToPlay.color == card.COLOR.WILD):
             color = random.choice(utils.normal_color_list)

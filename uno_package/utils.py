@@ -149,7 +149,7 @@ def hand_to_state_rep(hand):
             state_matrix[color][val] += count
     return state_matrix
 
-def state_rep_to_action_numbers(state_matrix):
+def state_rep_to_action_numbers_list(state_matrix):
     actionNumberList = []
     for i in range(len(state_matrix)):
         for j in range(len(state_matrix[i])):
@@ -195,5 +195,5 @@ def action_to_card_rep(action):
 
     ## if card is a wild card
     if ((int(action / 15) + 1)* 15) % action in (1, 2):
-        key = key.replace(key.split(' | ')[0], 'WILD')
+        key = key.replace(key.split(' | ')[0], card.COLOR.WILD.value)
     return key
