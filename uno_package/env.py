@@ -59,16 +59,16 @@ class UnoEnvironment(AECEnv):
         actSpaces = {}
         for player in self.agents:
             obsSpace = {}
-            obsSpace[player] = gym.spaces.MultiDiscrete([5,15], dtype=int)
-            obsSpace['played_cards'] = gym.spaces.MultiDiscrete([5,15], dtype=int)
+            obsSpace[player] = gym.spaces.MultiDiscrete([4,15], dtype=int)
+            obsSpace['played_cards'] = gym.spaces.MultiDiscrete([4,15], dtype=int)
             obsSpace['top_card'] = gym.spaces.Text(25)
             obsSpace['chosen_color'] = gym.spaces.Text(6)
-            obsSpace['available_moves'] = gym.spaces.MultiDiscrete([5,15], dtype=int)
+            obsSpace['available_moves'] = gym.spaces.MultiDiscrete([4,15], dtype=int)
             obsSpace['clockwise'] = gym.spaces.Text(16)
-            obsSpace['hand_counts'] = gym.spaces.Dict({p: gym.spaces.Discrete(108) for p in self.agents})
+            obsSpace['hand_counts'] = gym.spaces.Dict({p: gym.spaces.Discrete(108) for p in self.agents}) # may want to change this one
             obsSpaces[player] = gym.spaces.Dict(obsSpace)
 
-            actSpaces[player] = gym.spaces.Discrete(55)
+            actSpaces[player] = gym.spaces.Discrete(61)
         
         
         self.observation_spaces = gym.spaces.Dict(obsSpaces)
@@ -132,7 +132,7 @@ class UnoEnvironment(AECEnv):
     def step(self, action, playerDrewCard):
         direction = 1 if self.isClockwise else -1
 
-        #get card repr of action, get card from players hand and play it
+        # get card repr of action, get card from players hand and play it
         playedCardRepr = utils.action_to_card_rep(action)
         playedCard = self.agent_selection.get_card(playedCardRepr)
         self.play_card(playedCard)

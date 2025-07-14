@@ -4,7 +4,7 @@ import numpy as np
 
 normal_color_list = [card.COLOR.RED, card.COLOR.GREEN, card.COLOR.BLUE, card.COLOR.YELLOW]
 
-COLOR_MAP = {card.COLOR.RED.value: 0, card.COLOR.GREEN.value: 1, card.COLOR.BLUE.value: 2, card.COLOR.YELLOW.value: 3, card.COLOR.WILD.value: 4}
+COLOR_MAP = {card.COLOR.RED.value: 0, card.COLOR.GREEN.value: 1, card.COLOR.BLUE.value: 2, card.COLOR.YELLOW.value: 3}
 
 # a map of value to its index
 VALUE_MAP = {card.VALUE.ZERO.value: 0, card.VALUE.ONE.value: 1, card.VALUE.TWO.value: 2,
@@ -13,14 +13,12 @@ VALUE_MAP = {card.VALUE.ZERO.value: 0, card.VALUE.ONE.value: 1, card.VALUE.TWO.v
             card.VALUE.NINE.value: 9, card.VALUE.SKIP.value: 10, card.VALUE.REVERSE.value: 11,
             card.VALUE.DRAW2.value: 12, card.VALUE.NORMAL.value: 13, card.VALUE.DRAW4.value: 14}
 
-## 55 actions
-## 0-12 RED 0-9, skip, reverse, d2
-## 13-25 GREEN 0-9, skip, reverse, d2
-## 26-38 BLUE 0-9, skip, reverse, d2
-## 39-51 YELLOW 0-9, skip, reverse, d2
-## 52 WILD NORMAL
-## 53 WILD D4
-## 54 draw
+## 61 actions
+## 0-14 RED 0-9, skip, reverse, d2, wild, d4
+## 15-29 GREEN 0-9, skip, reverse, d2, wild, d4
+## 30-54 BLUE 0-9, skip, reverse, d2, wild, d4
+## 55-59 YELLOW 0-9, skip, reverse, d2, wild, d4
+## 60 draw
 ACTION_MAP = {
     f"{card.COLOR.RED.value} | {card.VALUE.ZERO.value}": 0,
     f"{card.COLOR.RED.value} | {card.VALUE.ONE.value}": 1,
@@ -35,48 +33,54 @@ ACTION_MAP = {
     f"{card.COLOR.RED.value} | {card.VALUE.SKIP.value}": 10,
     f"{card.COLOR.RED.value} | {card.VALUE.REVERSE.value}": 11,
     f"{card.COLOR.RED.value} | {card.VALUE.DRAW2.value}": 12,
-    f"{card.COLOR.GREEN.value} | {card.VALUE.ZERO.value}": 13,
-    f"{card.COLOR.GREEN.value} | {card.VALUE.ONE.value}": 14,
-    f"{card.COLOR.GREEN.value} | {card.VALUE.TWO.value}": 15,
-    f"{card.COLOR.GREEN.value} | {card.VALUE.THREE.value}": 16,
-    f"{card.COLOR.GREEN.value} | {card.VALUE.FOUR.value}": 17,
-    f"{card.COLOR.GREEN.value} | {card.VALUE.FIVE.value}": 18,
-    f"{card.COLOR.GREEN.value} | {card.VALUE.SIX.value}": 19,
-    f"{card.COLOR.GREEN.value} | {card.VALUE.SEVEN.value}": 20,
-    f"{card.COLOR.GREEN.value} | {card.VALUE.EIGHT.value}": 21,
-    f"{card.COLOR.GREEN.value} | {card.VALUE.NINE.value}": 22,
-    f"{card.COLOR.GREEN.value} | {card.VALUE.SKIP.value}": 23,
-    f"{card.COLOR.GREEN.value} | {card.VALUE.REVERSE.value}": 24,
-    f"{card.COLOR.GREEN.value} | {card.VALUE.DRAW2.value}": 25,
-    f"{card.COLOR.BLUE.value} | {card.VALUE.ZERO.value}": 26,
-    f"{card.COLOR.BLUE.value} | {card.VALUE.ONE.value}": 27,
-    f"{card.COLOR.BLUE.value} | {card.VALUE.TWO.value}": 28,
-    f"{card.COLOR.BLUE.value} | {card.VALUE.THREE.value}": 29,
-    f"{card.COLOR.BLUE.value} | {card.VALUE.FOUR.value}": 30,
-    f"{card.COLOR.BLUE.value} | {card.VALUE.FIVE.value}": 31,
-    f"{card.COLOR.BLUE.value} | {card.VALUE.SIX.value}": 32,
-    f"{card.COLOR.BLUE.value} | {card.VALUE.SEVEN.value}": 33,
-    f"{card.COLOR.BLUE.value} | {card.VALUE.EIGHT.value}": 34,
-    f"{card.COLOR.BLUE.value} | {card.VALUE.NINE.value}": 35,
-    f"{card.COLOR.BLUE.value} | {card.VALUE.SKIP.value}": 36,
-    f"{card.COLOR.BLUE.value} | {card.VALUE.REVERSE.value}": 37,
-    f"{card.COLOR.BLUE.value} | {card.VALUE.DRAW2.value}": 38,
-    f"{card.COLOR.YELLOW.value} | {card.VALUE.ZERO.value}": 39,
-    f"{card.COLOR.YELLOW.value} | {card.VALUE.ONE.value}": 40,
-    f"{card.COLOR.YELLOW.value} | {card.VALUE.TWO.value}": 41,
-    f"{card.COLOR.YELLOW.value} | {card.VALUE.THREE.value}": 42,
-    f"{card.COLOR.YELLOW.value} | {card.VALUE.FOUR.value}": 43,
-    f"{card.COLOR.YELLOW.value} | {card.VALUE.FIVE.value}": 44,
-    f"{card.COLOR.YELLOW.value} | {card.VALUE.SIX.value}": 45,
-    f"{card.COLOR.YELLOW.value} | {card.VALUE.SEVEN.value}": 46,
-    f"{card.COLOR.YELLOW.value} | {card.VALUE.EIGHT.value}": 47,
-    f"{card.COLOR.YELLOW.value} | {card.VALUE.NINE.value}": 48,
-    f"{card.COLOR.YELLOW.value} | {card.VALUE.SKIP.value}": 49,
-    f"{card.COLOR.YELLOW.value} | {card.VALUE.REVERSE.value}": 50,
-    f"{card.COLOR.YELLOW.value} | {card.VALUE.DRAW2.value}": 51,
-    f"{card.COLOR.WILD.value} | {card.VALUE.NORMAL.value}": 52,
-    f"{card.COLOR.WILD.value} | {card.VALUE.DRAW4.value}": 53,
-    "DRAW": 54,    
+    f"{card.COLOR.RED.value} | {card.VALUE.NORMAL.value}": 13,
+    f"{card.COLOR.RED.value} | {card.VALUE.DRAW4.value}": 14,
+    f"{card.COLOR.GREEN.value} | {card.VALUE.ZERO.value}": 15,
+    f"{card.COLOR.GREEN.value} | {card.VALUE.ONE.value}": 16,
+    f"{card.COLOR.GREEN.value} | {card.VALUE.TWO.value}": 17,
+    f"{card.COLOR.GREEN.value} | {card.VALUE.THREE.value}": 18,
+    f"{card.COLOR.GREEN.value} | {card.VALUE.FOUR.value}": 19,
+    f"{card.COLOR.GREEN.value} | {card.VALUE.FIVE.value}": 20,
+    f"{card.COLOR.GREEN.value} | {card.VALUE.SIX.value}": 21,
+    f"{card.COLOR.GREEN.value} | {card.VALUE.SEVEN.value}": 22,
+    f"{card.COLOR.GREEN.value} | {card.VALUE.EIGHT.value}": 23,
+    f"{card.COLOR.GREEN.value} | {card.VALUE.NINE.value}": 24,
+    f"{card.COLOR.GREEN.value} | {card.VALUE.SKIP.value}": 25,
+    f"{card.COLOR.GREEN.value} | {card.VALUE.REVERSE.value}": 26,
+    f"{card.COLOR.GREEN.value} | {card.VALUE.DRAW2.value}": 27,
+    f"{card.COLOR.GREEN.value} | {card.VALUE.NORMAL.value}": 28,
+    f"{card.COLOR.GREEN.value} | {card.VALUE.DRAW4.value}": 29,
+    f"{card.COLOR.BLUE.value} | {card.VALUE.ZERO.value}": 30,
+    f"{card.COLOR.BLUE.value} | {card.VALUE.ONE.value}": 31,
+    f"{card.COLOR.BLUE.value} | {card.VALUE.TWO.value}": 32,
+    f"{card.COLOR.BLUE.value} | {card.VALUE.THREE.value}": 33,
+    f"{card.COLOR.BLUE.value} | {card.VALUE.FOUR.value}": 34,
+    f"{card.COLOR.BLUE.value} | {card.VALUE.FIVE.value}": 35,
+    f"{card.COLOR.BLUE.value} | {card.VALUE.SIX.value}": 36,
+    f"{card.COLOR.BLUE.value} | {card.VALUE.SEVEN.value}": 37,
+    f"{card.COLOR.BLUE.value} | {card.VALUE.EIGHT.value}": 38,
+    f"{card.COLOR.BLUE.value} | {card.VALUE.NINE.value}": 39,
+    f"{card.COLOR.BLUE.value} | {card.VALUE.SKIP.value}": 40,
+    f"{card.COLOR.BLUE.value} | {card.VALUE.REVERSE.value}": 41,
+    f"{card.COLOR.BLUE.value} | {card.VALUE.DRAW2.value}": 42,
+    f"{card.COLOR.BLUE.value} | {card.VALUE.NORMAL.value}": 43,
+    f"{card.COLOR.BLUE.value} | {card.VALUE.DRAW4.value}": 44,
+    f"{card.COLOR.YELLOW.value} | {card.VALUE.ZERO.value}": 45,
+    f"{card.COLOR.YELLOW.value} | {card.VALUE.ONE.value}": 46,
+    f"{card.COLOR.YELLOW.value} | {card.VALUE.TWO.value}": 47,
+    f"{card.COLOR.YELLOW.value} | {card.VALUE.THREE.value}": 48,
+    f"{card.COLOR.YELLOW.value} | {card.VALUE.FOUR.value}": 49,
+    f"{card.COLOR.YELLOW.value} | {card.VALUE.FIVE.value}": 50,
+    f"{card.COLOR.YELLOW.value} | {card.VALUE.SIX.value}": 51,
+    f"{card.COLOR.YELLOW.value} | {card.VALUE.SEVEN.value}": 52,
+    f"{card.COLOR.YELLOW.value} | {card.VALUE.EIGHT.value}": 53,
+    f"{card.COLOR.YELLOW.value} | {card.VALUE.NINE.value}": 54,
+    f"{card.COLOR.YELLOW.value} | {card.VALUE.SKIP.value}": 55,
+    f"{card.COLOR.YELLOW.value} | {card.VALUE.REVERSE.value}": 56,
+    f"{card.COLOR.YELLOW.value} | {card.VALUE.DRAW2.value}": 57,
+    f"{card.COLOR.YELLOW.value} | {card.VALUE.NORMAL.value}": 58,
+    f"{card.COLOR.YELLOW.value} | {card.VALUE.DRAW4.value}": 59,
+    "DRAW": 60,    
 }
 
 ##ansi codes to color text
@@ -129,18 +133,34 @@ def hand_to_dict(hand):
             handDict[card.__repr__()] += 1
     return handDict
 
+## given a list of cards, returns the state representation of it which is a 4x15 matrix
 def hand_to_state_rep(hand):
-    state_matrix = np.zeros((5, 15), dtype=int)
+    state_matrix = np.zeros((4, 15), dtype=int)
     hand = hand_to_dict(hand) 
-    for card, count in hand.items():
-        cardInfo = card.split(' | ')
-        color = COLOR_MAP[cardInfo[0]]
-        value = VALUE_MAP[cardInfo[1]]
-        state_matrix[color][value] += count
+    for c, count in hand.items():
+        cardInfo = c.split(' | ')
+        val = VALUE_MAP[cardInfo[1]]
+        # put wild in each color row
+        if cardInfo[0] == card.COLOR.WILD.value:
+            for col in COLOR_MAP.values():
+                state_matrix[col][val] += count
+        else:
+            color = COLOR_MAP[cardInfo[0]]
+            state_matrix[color][val] += count
     return state_matrix
 
-def get_state_non_zero_indices(state_matrix):
-    pass
+def state_rep_to_action_numbers(state_matrix):
+    actionNumberList = []
+    for i in range(len(state_matrix)):
+        for j in range(len(state_matrix[i])):
+            if state_matrix[i][j] >= 1:
+                print(i)
+                print(j)
+                actionNumber = (i * len(state_matrix[i])) + j
+                print(actionNumber)
+                actionNumberList.append(actionNumber)
+    return actionNumberList
+
 
 # def hand_to_state_rep(state_matrix, hand):
 #     state_matrix = np.zeros((5, 15), dtype=int)
@@ -165,11 +185,15 @@ def state_to_card_rep(state_matrix):
 def card_to_action_number(c):
     return ACTION_MAP[c.__repr__()]
 
-#0-54
+#0-60
 def action_to_card_rep(action):
-    ## action 54 is draw
-    if action == 54:
+    ## action 60 is draw
+    if action == 60:
         return None
     
     key = next((k for k, v in ACTION_MAP.items() if v == action), None)
+
+    ## if card is a wild card
+    if ((int(action / 15) + 1)* 15) % action in (1, 2):
+        key = key.replace(key.split(' | ')[0], 'WILD')
     return key
