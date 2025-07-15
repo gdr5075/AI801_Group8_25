@@ -195,8 +195,9 @@ def action_to_card_rep(action):
 
     ## if card is a wild card
     ## make sure divide by zero doesn't happen
-    if (not key == 0 and (int(action / 15) + 1)* 15) % action in (1, 2):
-        keyColor = key.split(' | ')[0]
-        key = key.replace(key.split(' | ')[0], card.COLOR.WILD.value)
-        return key, keyColor
+    if not action in (0, 1, 2, 7):
+        if ((int(action / 15) + 1)* 15) % action in (1, 2):
+            keyColor = key.split(' | ')[0]
+            key = key.replace(key.split(' | ')[0], card.COLOR.WILD.value)
+            return key, keyColor
     return key, None

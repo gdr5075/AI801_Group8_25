@@ -25,8 +25,4 @@ class TestLoop(Loop):
                 nextObservation = env.observe(currentPlayer)
                 reward = env.rewards[currentPlayer]
                 #currentPlayer.update(observation, action, )
-                # if game over, update all agents
-                
-                # if tuple wild was played and color chosen
-                if isinstance(action, tuple):
-                    pass
+            print(f'Game over: {env.winning_player.name} wins!')

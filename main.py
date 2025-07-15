@@ -7,6 +7,9 @@ def main():
     me = player.HumanPlayer('Zach')
     frodo = player.Player('Frodo')
     players = [player.Player('Smaug'), frodo, player.Player('Sauron'), player.Player('Gollum')]
+    
+    # for action in range(len(utils.ACTION_MAP)):
+    #     print(utils.action_to_card_rep(action))
     unoEnv = env.raw_env(players, False)
     testLoop = loop.TestLoop()
     testLoop.start(1, unoEnv)
