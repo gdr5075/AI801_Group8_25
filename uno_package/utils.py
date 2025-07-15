@@ -112,15 +112,15 @@ def colorize_text(text, color):
 
 def colorize_text_by_color_name(text, color):
     colorText = ''
-    if(color == card.COLOR.BLUE):
+    if(color == card.COLOR.BLUE.value):
         colorText = f'{TextCode.BLUE.value}{text}{TextCode.RESET.value}'
-    elif(color == card.COLOR.RED):
+    elif(color == card.COLOR.RED.value):
         colorText = f'{TextCode.RED.value}{text}{TextCode.RESET.value}'
-    elif(color == card.COLOR.YELLOW):
+    elif(color == card.COLOR.YELLOW.value):
         colorText = f'{TextCode.YELLOW.value}{text}{TextCode.RESET.value}'
-    elif(color == card.COLOR.GREEN):
+    elif(color == card.COLOR.GREEN.value):
         colorText = f'{TextCode.GREEN.value}{text}{TextCode.RESET.value}'
-    elif(color == card.COLOR.WILD):
+    elif(color == card.COLOR.WILD.value):
         colorText = f'{TextCode.GRAY.value}{text}{TextCode.RESET.value}'
     return colorText
 
@@ -154,10 +154,7 @@ def state_rep_to_action_numbers_list(state_matrix):
     for i in range(len(state_matrix)):
         for j in range(len(state_matrix[i])):
             if state_matrix[i][j] >= 1:
-                print(i)
-                print(j)
                 actionNumber = (i * len(state_matrix[i])) + j
-                print(actionNumber)
                 actionNumberList.append(actionNumber)
     return actionNumberList
 
@@ -185,6 +182,9 @@ def state_to_card_rep(state_matrix):
 def card_to_action_number(c):
     return ACTION_MAP[c.__repr__()]
 
+def card_rep_to_action_number(repr):
+    return ACTION_MAP[repr]
+
 #0-60
 def action_to_card_rep(action):
     ## action 60 is draw
@@ -194,6 +194,9 @@ def action_to_card_rep(action):
     key = next((k for k, v in ACTION_MAP.items() if v == action), None)
 
     ## if card is a wild card
-    if ((int(action / 15) + 1)* 15) % action in (1, 2):
+    ## make sure divide by zero doesn't happen
+    if (not key == 0 and (int(action / 15) + 1)* 15) % action in (1, 2):
+        keyColor = key.split(' | ')[0]
         key = key.replace(key.split(' | ')[0], card.COLOR.WILD.value)
-    return key
+        return key, keyColor
+    return key, None

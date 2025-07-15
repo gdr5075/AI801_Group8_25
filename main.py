@@ -1,16 +1,22 @@
-from uno_package import player, game, env, utils,deck
+from uno_package import player, game, env, utils,deck, loop
 import gymnasium as gym
 import numpy as np
 from pettingzoo.utils import AgentSelector, wrappers
 
 def main():
     me = player.HumanPlayer('Zach')
-    players = [me, player.Player('Frodo'), player.Player('Sauron'), player.Player('Gollum')]
-    unoEnv = env.UnoEnvironment(players, True)
-    print(utils.action_to_card_rep(13))
-    print(utils.action_to_card_rep(28))
-    print(utils.action_to_card_rep(14))
-    print(utils.action_to_card_rep(29))
+    frodo = player.Player('Frodo')
+    players = [player.Player('Smaug'), frodo, player.Player('Sauron'), player.Player('Gollum')]
+    unoEnv = env.raw_env(players, False)
+    testLoop = loop.TestLoop()
+    testLoop.start(1, unoEnv)
+
+    # print(frodo.get_action(unoEnv.observe(frodo)))
+    # print(utils.action_to_card_rep(11)[0])
+    # print(utils.action_to_card_rep(28))
+    # print(utils.action_to_card_rep(14))
+    # print(utils.action_to_card_rep(29))
+    # print(utils.action_to_card_rep(29)[1])
     # print(me.hand)
     # print(unoEnv.observe(me))
     # print(utils.state_rep_to_action_numbers(unoEnv.observe(me)['observation']['available_moves']))

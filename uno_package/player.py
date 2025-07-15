@@ -21,20 +21,22 @@ class Player:
             game.choose_wild_color(color)
             print(f"Wild card played, {self.name} chose {utils.colorize_text_by_color_name(color, color)} as the next color")
 
-    def get_action(self, game, observation):
+    def get_action(self, observation):
         print(f"Player {self.name} is currently playing")
         moves = utils.state_rep_to_action_numbers_list(observation['observation']['available_moves'])
+        print(self.hand)
+        print(f'Has moves {moves}')
         if len(moves) == 0:
-            return utils.card_to_action_number('draw')
+            print('Player chooses move DRAW')
+            return utils.card_rep_to_action_number('DRAW')
         action = random.choice(moves)
-        cardToPlay = utils.action_to_card_rep(action)
+        (cardToPlay, chosenColor) = utils.action_to_card_rep(action)
+        ctpColor = cardToPlay.split(' | ')[0]
         print(f"player {self.name} playing {cardToPlay}")
-        if(cardToPlay.color == card.COLOR.WILD):
-            color = random.choice(utils.normal_color_list)
-            print(f"Wild card played, {self.name} chose {utils.colorize_text_by_color_name(color, color)} as the next color")
-            return utils.card_to_action_number(cardToPlay), color
+        if(ctpColor == card.COLOR.WILD.value):
+            print(f"Wild card played, {self.name} chose {utils.colorize_text_by_color_name(chosenColor, chosenColor)} as the next color")
 
-        return utils.card_to_action_number(cardToPlay)
+        return action
     
     def clear_hand(self):
         self.hand = []
@@ -126,7 +128,7 @@ class HumanPlayer(Player):
                     print("Please enter a valid number for the color")
             break
 
-    def get_action(self, game, observation):
+    def get_action(self, observation):
 
         ##just printing info for player
         print(f'{utils.TextCode.RED.value}----------Your turn {self.name}----------{utils.TextCode.RESET.value}')

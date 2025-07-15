@@ -14,45 +14,53 @@ class UnoAgentSelector(AgentSelector):
         self._current_agent = (self._current_agent + direction) % len(self.agent_order)
         self.selected_agent = self.agent_order[self._current_agent - 1]
         return self.selected_agent
+    
+    def reset(self) -> Any:
+        """Reset to the original order."""
+        self.reinit(self.agent_order)
+        return self.next(1)
+    
 
-class UnoEnvironment(AECEnv):
+def env(**kwargs):
+    """
+    The env function often wraps the environment in wrappers by default.
+    You can find full documentation for these methods
+    elsewhere in the developer documentation.
+    """
+    env = raw_env(**kwargs)
+    env = wrappers.TerminateIllegalWrapper(env, illegal_reward=-1)
+    env = wrappers.AssertOutOfBoundsWrapper(env)
+    env = wrappers.OrderEnforcingWrapper(env)
+    return env
+
+class raw_env(AECEnv):
+    """
+    The metadata holds environment constants. From gymnasium, we inherit the "render_modes",
+    metadata which specifies which modes can be put into the render() method.
+    At least human mode should be supported.
+    The "name" metadata allows the environment to be pretty printed.
+    """
     metadata = {
-        "name": "uno_environment_v0",
+        "name": "uno_v0",
+        "is_parallelizable": False,
+        "render_modes": ["human"]
     }
 
-    def __init__(self, players, hasHuman):
-        self.deck = deck.UnoMainDeck()
-        self.playPile = []
-        self.winning_player = None
-        self.turn_count = 0
-        self.isClockwise = True
+    def __init__(self, players, hasHuman, render_mode=None):
         self.hasHuman = hasHuman
-        ## this is in the case of draw4 or draw2, need a way to tell player
-        self.nextPlayerAction = None
-        ## setting to negative 1 because of how the gameplay loop is currently
-        self.wildColor = None
-        self.episodes = 2
+
+        ## petting zoo variables for AECenv
+        self.render_mode = render_mode
         #active agents
         self.agents = players
         #all agents
         self.possible_agents = self.agents[:]
-        self.__agent_selector = UnoAgentSelector(self.agents)
-        #current agent
-        self.agent_selection = self.__agent_selector.next(1)
 
-        ## deal initial hands
-        for player in self.agents:
-            self.deal_cards(player, 7)
-
-        ## get the top card, can't be either wild card
-        while True:
-            c = self.deck.pop()
-            if c.color == card.COLOR.WILD:
-                self.playPile.append(c)
-            else: 
-                self.add_play_pile_to_main_deck()
-                self.playPile.append(c)
-                break
+        """
+        Our AgentSelector utility allows easy cyclic stepping through the agents list.
+        """
+        self._agent_selector = UnoAgentSelector(self.agents)
+        self._agent_selector.next(1)
 
         ##for gym/petting zoo
         obsSpaces = {}
@@ -78,9 +86,20 @@ class UnoEnvironment(AECEnv):
         ## draw
         self.action_spaces = gym.spaces.Dict(actSpaces)
 
-    ## used to start a new episode
-    ## an episode in our case is a game
     def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
+        """
+        Reset needs to initialize the following attributes
+        - agents
+        - rewards
+        - _cumulative_rewards
+        - terminations
+        - truncations
+        - infos
+        - agent_selection
+        And must set up the environment so that render(), step(), and observe()
+        can be called without issues.
+        Here it sets up the state dictionary which is used by step() and the observations dictionary which is used by step() and observe()
+        """
         self.deck = deck.UnoMainDeck()
         self.playPile = []
         self.winning_player = None
@@ -89,9 +108,25 @@ class UnoEnvironment(AECEnv):
         self.nextPlayerAction = None
         self.wildColor = None
 
+        ## for pettingzoo
         ##reset player order
-        self.__agent_selector.reset()
+        self._agent_selector.reset()
+        self.agent_selection = self._agent_selector.selected_agent
+        self.rewards = {i: 0 for i in self.agents}
+        self._cumulative_rewards = {name: 0 for name in self.agents}
 
+        # Unlike gymnasium's Env, the environment is responsible for setting the random seed explicitly.
+        if seed is not None:
+            self.np_random, self.np_random_seed = seeding.np_random(seed)
+        self.agents = self.possible_agents[:]
+        self.rewards = {agent: 0 for agent in self.agents}
+        self._cumulative_rewards = {agent: 0 for agent in self.agents}
+        self.terminations = {agent: False for agent in self.agents}
+        self.truncations = {agent: False for agent in self.agents}
+        self.infos = {agent: {} for agent in self.agents}
+        self.state = {agent: None for agent in self.agents}
+        self.observations = {agent: None for agent in self.agents}
+        
         ## deal initial hands
         for player in self.agents:
             player.clear_hand()
@@ -106,8 +141,6 @@ class UnoEnvironment(AECEnv):
                 self.add_play_pile_to_main_deck()
                 self.playPile.append(c)
                 break
-
-        return self.observe()
     
     def observe(self, agent):
         """Convert internal state to observation format.
@@ -120,7 +153,7 @@ class UnoEnvironment(AECEnv):
         obsSpace[agent] = utils.hand_to_state_rep(agent.hand)
         obsSpace['played_cards'] = utils.hand_to_state_rep(self.playPile)
         obsSpace['top_card'] = self.get_top_play_card().__repr__()
-        obsSpace['chosen_color'] = self.wildColor.value if self.wildColor else None
+        obsSpace['chosen_color'] = self.wildColor if self.wildColor else None
         obsSpace['available_moves'] = utils.hand_to_state_rep(self.get_valid_moves_for_player(agent))
         obsSpace['direction'] = 'clockwise' if self.isClockwise else 'counterClockwise'
         obsSpace['hand_counts'] = {p: p.card_count() for p in self.agents}
@@ -129,38 +162,51 @@ class UnoEnvironment(AECEnv):
     
     ## contains core env logic. It takes an action and updates the env state and returns results
     ## args: action which is 0-54
-    def step(self, action, playerDrewCard):
+    def step(self, action):
+
+        stepAgent = self.agent_selection
+        
         direction = 1 if self.isClockwise else -1
 
-        # get card repr of action, get card from players hand and play it
+        # gets a tuple of card representation and wild color
         playedCardRepr = utils.action_to_card_rep(action)
-        playedCard = self.agent_selection.get_card(playedCardRepr)
-        self.play_card(playedCard)
+        
+        ## player is drawing
+        if not playedCardRepr:
+            self.draw_card(stepAgent)
 
-        #check if card does something to next player
-        self.check_auto_action(direction, playedCard)
+            ## if player drew card to play just return so that we don't move to next player. May want to add small negative reward for drawing here still
+            if len(self.get_valid_moves_for_player(stepAgent)) != 0:
+                return
+        else:
+            playedCard = stepAgent.get_card(playedCardRepr[0])
+            self.play_card(playedCard)
+            ##set wild color if wild played
+            self.wildColor = playedCardRepr[1] if not None else None
+            #check if card does something to next player
+            self.check_auto_action(direction, playedCard)
 
         direction = 1 if self.isClockwise else -1
 
-        # convert player hand to the state representation
-        playerHand = utils.hand_to_state_rep(player.hand)
+        ## if players hand is empty, they win
+        if len(stepAgent.hand) == 0:
+            self.winning_player = stepAgent
+            self.terminations = {agent: True for agent in self.agents}
 
-        ##check win
-        if np.equal(playerHand, np.zeros([5,15], dtype=int)):
-            self.winning_player = self.agent_selection
-
-        if self.winning_player:
+        if self.terminations[stepAgent]:
             for agent in self.agents:
                 if self.winning_player == agent:
-                    self.rewards[agent] += 1
+                    self.rewards[agent] = 1
                 else:
-                    self.rewards[agent] -= 1
+                    self.rewards[agent] = -1
 
-        self.rewards[agent] -= .01
+        self.rewards[stepAgent] = .01
+
+        self._accumulate_rewards()
         #eventually want to have more rewards, maybe causing player with less cards to gain cards, especially if it is one card 
         #possible rewards, skipping next agent if they have 1 card, reverse away from next agent if they have 1 card, making the agent with less card draw
         self.turn_count += 1
-        self.agent_selection = self.__agent_selector.next(direction)
+        self.agent_selection = self._agent_selector.next(direction)
 
     ## checks if special action happens to the next player
     ## if it happens to a player, it will perform the action and/or skip their turn
@@ -175,108 +221,21 @@ class UnoEnvironment(AECEnv):
                 print(f"Reversing turn order")
                 return
             case card.VALUE.SKIP:
-                self.__agent_selector.next(direction)
-                print(f"Skipping {self.__agent_selector._current_agent.name}")
+                self._agent_selector.next(direction)
+                print(f"Skipping {self._agent_selector.selected_agent.name}")
                 return
 
             case card.VALUE.DRAW2:
-                self.__agent_selector.next(direction)
-                self.draw_cards(self.__agent_selector._current_agent, 2)
-                print(f"{self.__agent_selector._current_agent.name} drawing 2 cards")
+                self._agent_selector.next(direction)
+                self.draw_cards(self._agent_selector.selected_agent, 2)
+                print(f"{self._agent_selector.selected_agent.name} drawing 2 cards")
                 return
 
             case card.VALUE.DRAW4:
-                self.__agent_selector.next(direction)
-                self.draw_cards(self.__agent_selector._current_agent, 4)
-                print(f"{self.__agent_selector._current_agent.name} drawing 4 cards")
+                self._agent_selector.next(direction)
+                self.draw_cards(self._agent_selector.selected_agent, 4)
+                print(f"{self._agent_selector.selected_agent.name} drawing 4 cards")
                 return
-    
-    def play(self):
-        print(f'beginning top card {self.get_top_play_card()}')
-        while self.is_game_over() == False and self.turn_count < 2000:
-            self.turn_count+=1
-            print(f"Turn {self.turn_count}")
-            next_player = self.get_next_player()
-            card_played = self.execute_player_turn(next_player)
-            if card_played:
-                #only handle special cards if the player actually played
-                self.handle_special_cards()
-            if(self.deck.is_empty()):
-                self.add_play_pile_to_main_deck()
-            if(self.hasHuman):
-                time.sleep(1)
-        if(self.winning_player != None):
-            print(f"{self.winning_player.name} won the game")
-        return self.winning_player
-        
-    def execute_player_turn(self, player):
-        #We handle special cards after a player plays them, so by the time we get here we're only concerned
-        #with what the next valid player is going to do
-
-        #1 - Check play options
-        moves = self.get_valid_moves(player)
-        if(len(moves) == 0):
-            print(f"{player.name} has no valid moves and has to draw: {player.get_hand()}")
-            self.draw_card(player)
-            print(f" {player.name} drew so now their hand is: {player.get_hand()}")
-            moves = self.get_valid_moves(player) #Refresh moves
-
-        #If player has options, let them move
-        if(len(moves) > 0):
-            player.play(self)
-            return True
-
-        return False
-
-    def get_next_player(self):
-        direction = 1 if self.isClockwise else -1
-        self.currentPlayer += direction
-
-        self.handle_player_limits()
-        # if the top card is no longer a wild card, reset the chosen color
-        if(not self.get_top_play_card().color == card.COLOR.WILD):
-            self.wildColor = None
-        
-        if(self.nextPlayerAction != None):
-            match (self.nextPlayerAction):
-                case card.VALUE.SKIP:
-                    print(f"Skipping {self.players[self.currentPlayer].name}")
-                    self.currentPlayer += direction
-                    self.nextPlayerAction = None
-
-                case card.VALUE.DRAW2:
-                    print(f"{self.players[self.currentPlayer].name} drawing 2 cards")
-                    self.draw_cards(self.players[self.currentPlayer], 2)
-                    self.currentPlayer += direction
-                    self.nextPlayerAction = None
-
-                case card.VALUE.DRAW4:
-                    print(f"{self.players[self.currentPlayer].name} drawing 4 cards")
-                    self.draw_cards(self.players[self.currentPlayer], 4)
-                    self.currentPlayer += direction
-                    self.nextPlayerAction = None
-
-        self.handle_player_limits()
-
-        return self.players[self.currentPlayer]
-
-    def handle_player_limits(self):
-        #Handle Overflow
-        if(self.currentPlayer > self.players.__len__()-1):
-            self.currentPlayer -= (self.players.__len__())
-            #print(f"Handled overflow")
-
-        #Handle Underflow
-        if(self.currentPlayer < 0):
-            self.currentPlayer += (self.players.__len__())
-            #print(f"Handled under")
-
-    def is_game_over(self):
-        for player in self.players:
-            if player.card_count() == 0:
-                self.winning_player = player
-                return True
-        return False
     
     def get_turn_order(self):
         return [p.name for p in self.players]
@@ -320,24 +279,12 @@ class UnoEnvironment(AECEnv):
                 pass
             cards.append(self.deck.pop())
         player.add_to_hand(cards)
-
-
-    def get_valid_moves(self, player):
-        valid_moves = []
-        play_top = self.get_top_play_card()
-
-        for i in range(len(player.get_hand())):
-            pCard = player.get_hand()[i]
-            if pCard.color == play_top.color or pCard.value == play_top.value or pCard.color == card.COLOR.WILD or pCard.color == self.wildColor:
-                #print(f"Valid card from {player.name} - they have a {pCard.color} {pCard.value} and the play top is {play_top.color} {play_top.value}")
-                valid_moves.append(i)
-        return valid_moves
     
     def get_valid_moves_for_player(self, player):
         valid_moves = []
         play_top = self.get_top_play_card()
         for pCard in player.get_hand():
-            if pCard.color == play_top.color or pCard.value == play_top.value or pCard.color == card.COLOR.WILD or pCard.color == self.wildColor:
+            if pCard.color == play_top.color or pCard.value == play_top.value or pCard.color == card.COLOR.WILD or pCard.color.value == self.wildColor:
                 valid_moves.append(pCard)
         return valid_moves
     
@@ -372,34 +319,12 @@ class UnoEnvironment(AECEnv):
     def shuffle_players(self):
         random.shuffle(self.players)
 
-    ## this handles cards in the deck that have special effects
-    def handle_special_cards(self):
-
-        #Handle Reverse
-        top = self.get_top_play_card()
-        match (top.value):
-
-            case card.VALUE.REVERSE:
-                self.isClockwise = not self.isClockwise
-                return
-
-            case card.VALUE.SKIP:
-                self.nextPlayerAction = card.VALUE.SKIP
-                return
-
-            case card.VALUE.DRAW2:
-                self.nextPlayerAction = card.VALUE.DRAW2
-                return
-
-            case card.VALUE.DRAW4:
-                self.nextPlayerAction = card.VALUE.DRAW4
-                return
-
-            case _:
-                #No Action to take
-                return
 
     def render(self):
+        """
+        Renders the environment. In human mode, it can print to terminal, open
+        up a graphical window, or open up some other display that a human can see and understand.
+        """
         pass
 
     def observation_space(self, agent):
