@@ -158,6 +158,15 @@ def state_rep_to_action_numbers_list(state_matrix):
                 actionNumberList.append(actionNumber)
     return actionNumberList
 
+def available_moves_to_action_mask(state_matrix):
+    action_mask = []
+    for i in range(len(state_matrix)):
+        for j in range(len(state_matrix[i])):
+            if state_matrix[i][j] >= 1:
+                action_mask.append(1)
+            else: action_mask.append(0)
+    return action_mask
+
 
 # def hand_to_state_rep(state_matrix, hand):
 #     state_matrix = np.zeros((5, 15), dtype=int)

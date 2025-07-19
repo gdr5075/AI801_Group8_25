@@ -16,7 +16,6 @@ agileRL is what pettingzoo uses for DQN https://pettingzoo.farama.org/tutorials/
 agileRL https://docs.agilerl.com/en/latest/api/algorithms/dqn.html 
 
 
-TODO:
-Probably need to change how wilds work. This would avoid the need for the agent to decide a card and then decide a color.
-Instead should add wild cards to each color as potential actions
-Let's say player has 1 normal wild. In the state_matrix, add a 1 in each row for the normal wild column. This would add 8 more actions and remove the two regular wild actions currently in the action_map. This would remove 1 row from the state matrices, making it a 4, 15. Requires refactoring some methods that convert to/from state matrices in utils.
+Learning:
+multi-agent experience replay buffer for off policy training
+transition is a named tuple representing a single transition in our environment. It essentially maps (state, action) pairs to their (next_state, reward) result, with the state being the screen difference image as described later on.
