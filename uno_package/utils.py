@@ -188,8 +188,11 @@ def target_to_state_rep(state_matrix, target):
 def state_to_card_rep(state_matrix):
     pass
 
-def card_to_action_number(c):
-    return ACTION_MAP[c.__repr__()]
+## just to convert top card to appropriate action
+def card_to_action_number(c, wildColor=None):
+    if c.color is card.COLOR.WILD:
+        cRep = f'{wildColor} | {c.value.value}'
+    return ACTION_MAP[cRep]
 
 def card_rep_to_action_number(repr):
     return ACTION_MAP[repr]
@@ -210,3 +213,16 @@ def action_to_card_rep(action):
             key = key.replace(key.split(' | ')[0], card.COLOR.WILD.value)
             return key, keyColor
     return key, None
+
+def color_to_number(color):
+    match (color):
+        case None:
+            return 0
+        case card.COLOR.RED.value:
+            return 1
+        case card.COLOR.GREEN.value:
+            return 2
+        case card.COLOR.BLUE.value:
+            return 3
+        case card.COLOR.YELLOW.value:
+            return 4

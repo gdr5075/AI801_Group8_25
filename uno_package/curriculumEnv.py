@@ -7,6 +7,7 @@ from uno_package import utils
 from agilerl.components.data import Transition
 from agilerl.components.replay_buffer import ReplayBuffer
 from tqdm import tqdm
+import numpy as np
 
 class CurriculumEnv:
    """Wrapper around environment to modify reward for curriculum learning.
@@ -52,14 +53,40 @@ class CurriculumEnv:
 
             while not self.env.winning_player:
                
-                print(f'Top card is {self.env.get_top_play_card()}')
-                currentPlayer  = self.env.agent_selection
-                print(f'current player {currentPlayer.name}')
-                observation = self.env.observe(currentPlayer)
-                action = self.env.action_space(currentPlayer).sample(utils.available_moves_to_action_mask(observation['observation']['available_moves']))
-                self.env.step(action)
-                nextObservation = self.env.observe(currentPlayer)
-                reward = self.env.rewards[currentPlayer]
+               print(f'Top card is {self.env.get_top_play_card()}')
+               currentPlayer  = self.env.agent_selection
+               print(f'current player {currentPlayer.name}')
+               observation = self.env.observe(currentPlayer)
+               actionNum = self.env.action_space(currentPlayer).sample(utils.available_moves_to_action_mask(observation['observation']['available_moves']))
+               self.env.step(actionNum)
+               nextObservation = self.env.observe(currentPlayer)
+               reward = self.env.rewards[currentPlayer]
+
+               ## information for transition
+               ## just making one big 2d array since transition want np arrays
+               obsToAdd = np.zeros(15)
+               obsToAdd[0] = utils.card_to_action_number(observation['observation']['top_card'])
+               obsToAdd[1] = utils.color_to_number(observation['observation']['chosen_color'])
+               obsToAdd[2] = observation['observation']['direction']
+               obsToAdd[3] = observation['observation']['direction'][0]
+               obsToAdd[4] = observation['observation']['direction'][1]
+               obsToAdd[5] = observation['observation']['direction'][2]
+               obsToAdd[6] = observation['observation']['direction'][3]
+               nextObsToAdd = np.zeros(15)
+               nextObsToAdd[0] = utils.card_to_action_number(observation['observation']['top_card'])
+               nextObsToAdd[1] = utils.color_to_number(observation['observation']['chosen_color'])
+               nextObsToAdd[2] = observation['observation']['direction']
+               nextObsToAdd[3] = observation['observation']['direction'][0]
+               nextObsToAdd[4] = observation['observation']['direction'][1]
+               nextObsToAdd[5] = observation['observation']['direction'][2]
+               nextObsToAdd[6] = observation['observation']['direction'][3]
+               transition = Transition(
+                  obs=(np.vstack([observation['observation'][currentPlayer], obsToAdd])),
+                  action=[actionNum],
+                  next_obs=(np.vstack([nextObservation['observation'][currentPlayer], nextObsToAdd])),
+                  reward=[reward],
+                  done=[False])
+               memory.add()
                 #currentPlayer.update(observation, action, )
                # Player 0's turn
                if opponent_first:

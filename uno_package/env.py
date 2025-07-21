@@ -20,6 +20,15 @@ class UnoAgentSelector(AgentSelector):
         self.reinit(self.agent_order)
         return self.next(1)
     
+    ## gets agents list where first index is current player and the next agents are in game's current direction
+    def get_agent_list(self, direction):
+        agentNumber = (self._current_agent) % len(self.agent_order)
+        agents = []
+        for _ in range(len(self.agent_order)):
+            agentNumber = (agentNumber) % len(self.agent_order)
+            agents.append(self.agent_order[agentNumber - 1])
+            agentNumber += direction
+        return agents
 
 def env(**kwargs):
     """
@@ -72,8 +81,8 @@ class raw_env(AECEnv):
             obsSpace['top_card'] = gym.spaces.Text(25)
             obsSpace['chosen_color'] = gym.spaces.Text(6)
             obsSpace['available_moves'] = gym.spaces.MultiDiscrete([4,15], dtype=int)
-            obsSpace['clockwise'] = gym.spaces.Text(16)
-            obsSpace['hand_counts'] = gym.spaces.Dict({p: gym.spaces.Discrete(108) for p in self.agents}) # may want to change this one
+            obsSpace['clockwise'] = gym.spaces.Discrete(2)
+            obsSpace['hand_counts'] = gym.spaces.MultiDiscrete([1,4])
             obsSpaces[player] = gym.spaces.Dict(obsSpace)
 
             actSpaces[player] = gym.spaces.Discrete(61)
@@ -157,8 +166,8 @@ class raw_env(AECEnv):
         obsSpace['top_card'] = self.get_top_play_card().__repr__()
         obsSpace['chosen_color'] = self.wildColor if self.wildColor else None
         obsSpace['available_moves'] = utils.hand_to_state_rep(self.get_valid_moves_for_player(agent))
-        obsSpace['direction'] = 'clockwise' if self.isClockwise else 'counterClockwise'
-        obsSpace['hand_counts'] = {p: p.card_count() for p in self.agents}
+        obsSpace['direction'] = 0 if self.isClockwise else 1
+        obsSpace['hand_counts'] = [p.card_count() for p in self._agent_selector.get_agent_list(1 if self.isClockwise else -1)]
         return { 'observation': obsSpace}
 
     

@@ -1,4 +1,4 @@
-from uno_package import player, game, env, utils,deck, loop
+from uno_package import player, game, env, utils,deck, loop, card
 import gymnasium as gym
 import numpy as np
 from pettingzoo.utils import AgentSelector, wrappers
@@ -21,6 +21,7 @@ from agilerl.hpo.mutation import Mutations
 from agilerl.hpo.tournament import TournamentSelection
 from agilerl.utils.utils import create_population
 from pettingzoo.test import api_test
+from agilerl.components.data import Transition
 
 def main():
     agentIds = ['UnoAgent_0', 'UnoAgent_1', 'UnoAgent_2', 'UnoAgent_3']
@@ -29,14 +30,7 @@ def main():
     players = [player.Player('Smaug'), frodo, player.Player('Sauron'), player.Player('Gollum')]
     
     unoEnv = env.raw_env(players, False)
-    # testLoop = loop.TestLoop()
-    # testLoop.start(2, unoEnv)
-    # x = torch.rand(5,3)
-    # print(x)
-    # print(torch.cuda.is_available())
-
-    api_test(unoEnv, num_cycles=1_000_000)
-
+    unoEnv.reset()
 
 if __name__ == "__main__":
     main()
