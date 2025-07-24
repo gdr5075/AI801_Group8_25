@@ -1,16 +1,46 @@
 from ray.rllib.env.multi_agent_env import MultiAgentEnv
+import random
 import gymnasium as gym
 from gymnasium.utils import seeding
 from uno_package import deck, card, utils
+from pettingzoo.utils import AgentSelector
+
+
+class UnoAgentSelector(AgentSelector):
+    ## needed to edit because reverse is in uno
+    def next(self, direction) -> any:
+        """Get the next agent."""
+        self._current_agent = (self._current_agent + direction) % len(self.agent_order)
+        self.selected_agent = self.agent_order[self._current_agent - 1]
+        return self.selected_agent
+    
+    def reset(self) -> any:
+        """Reset to the original order."""
+        self.reinit(self.agent_order)
+        return self.next(1)
+    
+    ## gets agents list where first index is current player and the next agents are in game's current direction
+    def get_agent_list(self, direction):
+        agentNumber = (self._current_agent) % len(self.agent_order)
+        agents = []
+        for _ in range(len(self.agent_order)):
+            agentNumber = (agentNumber) % len(self.agent_order)
+            agents.append(self.agent_order[agentNumber - 1])
+            agentNumber += direction
+        return agents
 
 class UnoRLLibEnv(MultiAgentEnv):
 
-    def __init__(self, players, hasHuman, config=None):
+    def __init__(self, players=None, hasHuman=False, config=None):
         super().__init__()
         ...
         # If your agents never change throughout the episode, set
         # `self.agents` to the same list as `self.possible_agents`.
         self.hasHuman = hasHuman
+
+        if players is None:
+            frodo = player.Player('Frodo')
+            players = [player.Player('Smaug'), frodo, player.Player('Sauron'), player.Player('Gollum')]
 
         ## petting zoo variables for AECenv
         #active agents
@@ -19,8 +49,8 @@ class UnoRLLibEnv(MultiAgentEnv):
         # """
         # Our AgentSelector utility allows easy cyclic stepping through the agents list.
         # """
-        # self._agent_selector = UnoAgentSelector(self.agents)
-        # self._agent_selector.next(1)
+        self._agent_selector = UnoAgentSelector(self.agents)
+        self._agent_selector.next(1)
 
         ##for gym/petting zoo
         self.observation_spaces = {}
@@ -64,16 +94,18 @@ class UnoRLLibEnv(MultiAgentEnv):
 
         ## for pettingzoo
         ##reset player order
+        self.current_player = self.agents[0]
 
-        #TODO - set current_player
-        #self.current_player = self._agent_selector.selected_agent
         self.rewards = {i: 0 for i in self.agents}
         self._cumulative_rewards = {name: 0 for name in self.agents}
 
         # Unlike gymnasium's Env, the environment is responsible for setting the random seed explicitly.
         if seed is not None:
             self.np_random, self.np_random_seed = seeding.np_random(seed)
+
         self.agents = self.possible_agents[:]
+        
+        #TODO - are these still needed?
         self.rewards = {agent: 0 for agent in self.agents}
         self._cumulative_rewards = {agent: 0 for agent in self.agents}
         self.terminations = {agent: False for agent in self.agents}
@@ -97,18 +129,23 @@ class UnoRLLibEnv(MultiAgentEnv):
                 self.playPile.append(c)
                 break
         
-        #TODO - Need to return observations and infos
-        #TODO - Its important to note that the returned observation dict is what determins the move order
+        current_observation = self.observe(self.current_player)
+
+        return {
+            self.current_player : current_observation
+        },{} #<-- And the empty info dict
+
 
     def step(self, action_dict):
 
-        stepAgent = self.agent_selection
+        terminateds = {"__all__": False}
+
+        stepAgent = self.current_player
         
         direction = 1 if self.isClockwise else -1
 
-        #TODO - use action_dict instead of action
         # gets a tuple of card representation and wild color
-        playedCardRepr = utils.action_to_card_rep(action)
+        playedCardRepr = utils.action_to_card_rep(action_dict[self.current_player])
         
         ## player is drawing
         if not playedCardRepr:
@@ -116,6 +153,7 @@ class UnoRLLibEnv(MultiAgentEnv):
 
             ## if player drew card to play just return so that we don't move to next player. May want to add small negative reward for drawing here still
             if len(self.get_valid_moves_for_player(stepAgent)) != 0:
+                #TODO - fix doing an early empty return. We need to return observation and rewards
                 return
         else:
             playedCard = stepAgent.get_card(playedCardRepr[0])
@@ -127,8 +165,10 @@ class UnoRLLibEnv(MultiAgentEnv):
 
         direction = 1 if self.isClockwise else -1
 
+
         ## if players hand is empty, they win
         if len(stepAgent.hand) == 0:
+            terminateds["__all__"] = True
             self.winning_player = stepAgent
             self.terminations = {agent: True for agent in self.agents}
 
@@ -149,6 +189,20 @@ class UnoRLLibEnv(MultiAgentEnv):
 
 
 
+        current_rewards = self.rewards[self.current_player]
+
+
+        #TODO - update self.current_player
+
+        #even though this is observer on the "current player" it is actually the next player becuase we updated self.current_player
+        new_observation = self.observe(self.current_player)
+        return (
+            {self.current_player: new_observation},
+            current_rewards,
+            terminateds,
+            {},
+            {},
+        )
 
 
 
@@ -156,30 +210,23 @@ class UnoRLLibEnv(MultiAgentEnv):
 
 
 
+    def observe(self, agent):
+        """Convert internal state to observation format.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        Returns:
+            dict: Observation with agents' hands, played cards, top_card, clockwise
+        """
+        obsSpace = {}
+  
+        obsSpace[agent] = utils.hand_to_state_rep(agent.hand)
+        obsSpace['played_cards'] = utils.hand_to_state_rep(self.playPile)
+        obsSpace['top_card'] = self.get_top_play_card().__repr__()
+        obsSpace['chosen_color'] = self.wildColor if self.wildColor else None
+        obsSpace['available_moves'] = utils.hand_to_state_rep(self.get_valid_moves_for_player(agent))
+        obsSpace['direction'] = 0 if self.isClockwise else 1
+        obsSpace['hand_counts'] = [p.card_count() for p in self._agent_selector.get_agent_list(1 if self.isClockwise else -1)]
+        #return { 'observation': obsSpace}
+        return obsSpace
 
 
 
@@ -308,3 +355,4 @@ class UnoRLLibEnv(MultiAgentEnv):
 
     def action_space(self, agent):
         return self.action_spaces[agent]
+    

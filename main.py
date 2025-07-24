@@ -11,6 +11,9 @@ from datetime import datetime
 
 from uno_package import RLLibEnv
 
+from ray.rllib.algorithms.ppo import PPOConfig
+
+
 import numpy as np
 import torch
 import wandb
@@ -28,14 +31,28 @@ from agilerl.components.data import Transition
 def main():
     agentIds = ['UnoAgent_0', 'UnoAgent_1', 'UnoAgent_2', 'UnoAgent_3']
     # me = player.HumanPlayer('Zach')
+
     frodo = player.Player('Frodo')
     players = [player.Player('Smaug'), frodo, player.Player('Sauron'), player.Player('Gollum')]
+
+
+
     
     # unoEnv = env.raw_env(players, False)
     # unoEnv.reset()
 
-    RLLib = RLLibEnv.UnoRLLibEnv(players, False)
-    RLLib.reset()
+    #RLLib = RLLibEnv.UnoRLLibEnv(players, False)
+
+    config = (
+        PPOConfig()
+        .environment(
+            RLLibEnv.UnoRLLibEnv, #This cant be right
+        )
+    )
+
+    ppo_w_custom_env = config.build_algo()
+    ppo_w_custom_env.train()
+
 
 if __name__ == "__main__":
     main()
