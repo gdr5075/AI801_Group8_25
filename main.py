@@ -9,6 +9,8 @@ import random
 from collections import deque
 from datetime import datetime
 
+from uno_package import RLLibEnv
+
 import numpy as np
 import torch
 import wandb
@@ -29,8 +31,11 @@ def main():
     frodo = player.Player('Frodo')
     players = [player.Player('Smaug'), frodo, player.Player('Sauron'), player.Player('Gollum')]
     
-    unoEnv = env.raw_env(players, False)
-    unoEnv.reset()
+    # unoEnv = env.raw_env(players, False)
+    # unoEnv.reset()
+
+    RLLib = RLLibEnv.UnoRLLibEnv(players, False)
+    RLLib.reset()
 
 if __name__ == "__main__":
     main()
