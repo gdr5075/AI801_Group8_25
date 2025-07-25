@@ -2,17 +2,50 @@ from ray.rllib.env.multi_agent_env import MultiAgentEnv
 import gymnasium as gym
 from gymnasium.utils import seeding
 from uno_package import deck, card, utils
+from pettingzoo.utils import AgentSelector
+
+
+class UnoAgentSelector(AgentSelector):
+    ## needed to edit because reverse is in uno
+    def next(self, direction) -> any:
+        """Get the next agent."""
+        print(f"direction {direction}")
+        self._current_agent = (self._current_agent + direction) % len(self.agent_order)
+        print(f"current agent {self._current_agent}")
+        print(f"agent order {self.agent_order}")
+        self.selected_agent = self.agent_order[self._current_agent - 1]
+        return self.selected_agent
+    
+    def reset(self) -> any:
+        """Reset to the original order."""
+        self.reinit(self.agent_order)
+        return self.next(1)
+    
+    ## gets agents list where first index is current player and the next agents are in game's current direction
+    def get_agent_list(self, direction):
+        agentNumber = (self._current_agent) % len(self.agent_order)
+        agents = []
+        for _ in range(len(self.agent_order)):
+            agentNumber = (agentNumber) % len(self.agent_order)
+            agents.append(self.agent_order[agentNumber - 1])
+            agentNumber += direction
+        return agents
 
 class UnoRLLibEnv(MultiAgentEnv):
 
-    def __init__(self, players, hasHuman, config=None):
+    def __init__(self, config=None):
+        players = config.get("players", None)
+        hasHuman = config.get("hasHuman", False)
+        print(players)
         super().__init__()
-        ...
         # If your agents never change throughout the episode, set
         # `self.agents` to the same list as `self.possible_agents`.
         self.hasHuman = hasHuman
 
-        ## petting zoo variables for AECenv
+        if players is None:
+            frodo = player.Player('Frodo')
+            players = [player.Player('Smaug'), frodo, player.Player('Sauron'), player.Player('Gollum')]
+
         #active agents
         self.agents = self.possible_agents = players
         

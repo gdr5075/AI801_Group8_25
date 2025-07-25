@@ -13,17 +13,7 @@ from uno_package import RLLibEnv
 
 import numpy as np
 import torch
-import wandb
-import yaml
-from tqdm import tqdm
-from pettingzoo.classic import connect_four_v3
-
-from agilerl.components.replay_buffer import ReplayBuffer
-from agilerl.hpo.mutation import Mutations
-from agilerl.hpo.tournament import TournamentSelection
-from agilerl.utils.utils import create_population
-from pettingzoo.test import api_test
-from agilerl.components.data import Transition
+from ray.rllib.algorithms.dqn import DQNConfig
 
 def main():
     agentIds = ['UnoAgent_0', 'UnoAgent_1', 'UnoAgent_2', 'UnoAgent_3']
@@ -31,11 +21,39 @@ def main():
     frodo = player.Player('Frodo')
     players = [player.Player('Smaug'), frodo, player.Player('Sauron'), player.Player('Gollum')]
     
+    RLLibEnv.UnoAgentSelector
+
     # unoEnv = env.raw_env(players, False)
     # unoEnv.reset()
 
-    RLLib = RLLibEnv.UnoRLLibEnv(players, False)
-    RLLib.reset()
+    # RLLib = RLLibEnv.UnoRLLibEnv(players, False)
+
+    config = (
+        DQNConfig()
+        .environment(
+            ## not sure if this is correct either, but we can use tune.register_env to register the custom environment if we need to
+            env = RLLibEnv.UnoRLLibEnv, #This cant be right.
+            env_config= {
+                "players": agentIds,     # Pass any required env args here
+                "hasHuman": False
+            }
+        )
+        .multi_agent(
+            policies={"UnoAgent_0", "UnoAgent_1", "UnoAgent_2", "UnoAgent_3"},
+            policy_mapping_fn=lambda agent_id, episode, **kw: agent_id,
+            policies_to_train=agentIds,  # Specify which policies to train
+        )
+        .framework("torch")
+        .env_runners(num_env_runners=2)
+        .training(replay_buffer_config={
+            "type": "MultiAgentReplayBuffer",
+            "capacity": 60000,
+        })
+    )
+
+    dqn_w_custom_env = config.build_algo()
+    dqn_w_custom_env.train()
+
 
 if __name__ == "__main__":
     main()
