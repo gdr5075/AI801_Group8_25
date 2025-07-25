@@ -147,26 +147,26 @@ class UnoRLLibEnv(MultiAgentEnv):
         # gets a tuple of card representation and wild color
         playedCardRepr = utils.action_to_card_rep(action_dict[self.current_player])
         
+        agentDrewPlayableCard = False
         ## player is drawing
         if not playedCardRepr:
             self.draw_card(stepAgent)
 
-            ## if player drew card to play just return so that we don't move to next player. May want to add small negative reward for drawing here still
+            ## if player drew card to play, set the boolean to true so it won't skip to the next player for the next step
             if len(self.get_valid_moves_for_player(stepAgent)) != 0:
-                #TODO - fix doing an early empty return. We need to return observation and rewards
-                return
+                agentDrewPlayableCard = True
         else:
             playedCard = stepAgent.get_card(playedCardRepr[0])
             self.play_card(playedCard)
-            ##set wild color if wild played
+            ## set wild color if wild played
             self.wildColor = playedCardRepr[1] if not None else None
-            #check if card does something to next player
+            # check if card does something to next player
             self.check_auto_action(direction, playedCard)
 
         direction = 1 if self.isClockwise else -1
 
 
-        ## if players hand is empty, they win
+        ## if player's hand is empty, they win
         if len(stepAgent.hand) == 0:
             terminateds["__all__"] = True
             self.winning_player = stepAgent
@@ -181,13 +181,14 @@ class UnoRLLibEnv(MultiAgentEnv):
 
         self.rewards[stepAgent] = .01
 
+        # TODO: Is this still necessary here? This was a pettingzoo function
         self._accumulate_rewards()
+
         #eventually want to have more rewards, maybe causing player with less cards to gain cards, especially if it is one card 
         #possible rewards, skipping next agent if they have 1 card, reverse away from next agent if they have 1 card, making the agent with less card draw
-        self.turn_count += 1
-        self.agent_selection = self._agent_selector.next(direction)
-
-
+        if (not agentDrewPlayableCard):
+            self.turn_count += 1
+            self.agent_selection = self._agent_selector.next(direction)
 
         current_rewards = self.rewards[self.current_player]
 
