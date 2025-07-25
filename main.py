@@ -11,8 +11,8 @@ from datetime import datetime
 
 from uno_package import RLLibEnv
 
-from ray.rllib.algorithms.ppo import PPOConfig
-
+from ray.rllib.algorithms.dqn import DQNConfig
+from ray.rllib.policy.policy import PolicySpec
 
 import numpy as np
 import torch
@@ -28,6 +28,7 @@ from agilerl.utils.utils import create_population
 from pettingzoo.test import api_test
 from agilerl.components.data import Transition
 
+
 def main():
     agentIds = ['UnoAgent_0', 'UnoAgent_1', 'UnoAgent_2', 'UnoAgent_3']
     # me = player.HumanPlayer('Zach')
@@ -35,23 +36,43 @@ def main():
     frodo = player.Player('Frodo')
     players = [player.Player('Smaug'), frodo, player.Player('Sauron'), player.Player('Gollum')]
 
-
-
-    
     # unoEnv = env.raw_env(players, False)
     # unoEnv.reset()
 
-    #RLLib = RLLibEnv.UnoRLLibEnv(players, False)
+    # RLLib = RLLibEnv.UnoRLLibEnv(players, False)
 
     config = (
-        PPOConfig()
+        DQNConfig()
         .environment(
-            RLLibEnv.UnoRLLibEnv, #This cant be right
+            ## not sure if this is correct either, but we can use tune.register_env to register the custom environment if we need to
+            env = RLLibEnv.UnoRLLibEnv, #This cant be right.
+            env_config= {
+                "players": players,     # Pass any required env args here
+                "hasHuman": False
+            }
         )
+        .multi_agent(
+            policies={
+                ## not quite sure what the first argument, policy_class is
+                agent_id: PolicySpec(None, RLLibEnv.UnoRLLibEnv.observation_space(agent_id), RLLibEnv.UnoRLLibEnv.action_space(agent_id), {}) for agent_id in agentIds
+            },
+            policy_mapping_fn=AgentSelector(lambda agent_id: agent_id),
+            policies_to_train=list(agentIds),  # Specify which policies to train
+        )
+        .framework("torch")
+        .rollouts(
+            num_rollout_workers=1,  # Increase for more parallelism
+        )
+        .training(replay_buffer_config={
+            "type": "PrioritizedEpisodeReplayBuffer",
+            "capacity": 60000,
+            "alpha": 0.5,
+            "beta": 0.5,
+        })
     )
 
-    ppo_w_custom_env = config.build_algo()
-    ppo_w_custom_env.train()
+    dqn_w_custom_env = config.build_algo()
+    dqn_w_custom_env.train()
 
 
 if __name__ == "__main__":
