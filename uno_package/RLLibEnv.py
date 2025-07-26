@@ -50,7 +50,7 @@ class UnoRLLibEnv(MultiAgentEnv):
         self._agent_selector.next(1)
 
         ##for gym/petting zoo
-        self.observation_spaces = {agent: gym.spaces.Box(low=0, high=108, shape=(75,), dtype=np.int16) for agent in self.agents}
+        self.observation_spaces = {agent: gym.spaces.Box(low=0, high=108, shape=(75,), dtype=np.float32) for agent in self.agents}
         self.action_spaces = {agent: gym.spaces.Discrete(61) for agent in self.agents} 
 
         # dict space seems to have issues with rllib, so we will use box spaces
@@ -156,7 +156,7 @@ class UnoRLLibEnv(MultiAgentEnv):
             if len(self.get_valid_moves_for_player(stepAgent)) != 0:
                 agentDrewPlayableCard = True
         else:
-            playedCard = stepAgent.get_card(playedCardRepr[0])
+            playedCard = self.players[stepAgent].get_card(playedCardRepr[0])
             self.play_card(playedCard)
             ## set wild color if wild played
             self.wildColor = playedCardRepr[1] if not None else None
@@ -220,7 +220,7 @@ class UnoRLLibEnv(MultiAgentEnv):
         obsSpace = {}
   
         obsSpace[agent] = utils.hand_to_state_rep(self.players[agent].hand)
-        rowToAdd = np.zeros((15), dtype=int)
+        rowToAdd = np.zeros((15), dtype=float)
         rowToAdd[0] = utils.card_to_action_number(self.get_top_play_card())
         rowToAdd[1] = utils.color_to_number(self.wildColor)
         rowToAdd[2] = 0 if self.isClockwise else 1
