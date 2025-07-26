@@ -11,17 +11,20 @@ from datetime import datetime
 
 from uno_package import RLLibEnv
 
+from ray.rllib.algorithms.dqn import DQNConfig
+from ray.rllib.policy.policy import PolicySpec
+
 import numpy as np
 import torch
 from ray.rllib.algorithms.dqn import DQNConfig
 
+
 def main():
     agentIds = ['UnoAgent_0', 'UnoAgent_1', 'UnoAgent_2', 'UnoAgent_3']
     # me = player.HumanPlayer('Zach')
+
     frodo = player.Player('Frodo')
     players = [player.Player('Smaug'), frodo, player.Player('Sauron'), player.Player('Gollum')]
-    
-    RLLibEnv.UnoAgentSelector
 
     # unoEnv = env.raw_env(players, False)
     # unoEnv.reset()
