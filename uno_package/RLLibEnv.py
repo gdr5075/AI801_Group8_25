@@ -221,14 +221,14 @@ class UnoRLLibEnv(MultiAgentEnv):
         obsSpace = {}
   
         obsSpace[agent] = utils.hand_to_state_rep(agent.hand)
-        rowToAdd = np.zeros((1, 15), dtype=int)
+        rowToAdd = np.zeros((15), dtype=int)
         rowToAdd[0] = utils.card_to_action_number(self.get_top_play_card())
         rowToAdd[1] = utils.color_to_number(self.wildColor)
         rowToAdd[2] = 0 if self.isClockwise else 1
         cardCounts = [p.card_count() for p in self._agent_selector.get_agent_list(1)]
         for i in range(len(self.agents)):
             rowToAdd[i+3] = cardCounts[i]
-        fullObs = np.vstack(obsSpace[agent], rowToAdd).flatten()
+        fullObs = np.vstack((obsSpace[agent], rowToAdd)).flatten()
         # obsSpace['played_cards'] = utils.hand_to_state_rep(self.playPile)
         # obsSpace['top_card'] = self.get_top_play_card().__repr__()
         # obsSpace['chosen_color'] = self.wildColor if self.wildColor else None
