@@ -17,15 +17,12 @@ from ray.rllib.policy.policy import PolicySpec
 import numpy as np
 import torch
 from ray.rllib.algorithms.dqn import DQNConfig
+from ray.rllib.connectors.env_to_module import FlattenObservations
 
 
 def main():
     agentIds = ['UnoAgent_0', 'UnoAgent_1', 'UnoAgent_2', 'UnoAgent_3']
-    # me = player.HumanPlayer('Zach')
-
-    frodo = player.Player('Frodo')
-    players = [player.Player('Smaug'), frodo, player.Player('Sauron'), player.Player('Gollum')]
-
+    players = [player.Player(id) for id in agentIds]
     # unoEnv = env.raw_env(players, False)
     # unoEnv.reset()
 
@@ -37,7 +34,7 @@ def main():
             ## not sure if this is correct either, but we can use tune.register_env to register the custom environment if we need to
             env = RLLibEnv.UnoRLLibEnv, #This cant be right.
             env_config= {
-                "players": agentIds,     # Pass any required env args here
+                "players": players,     # Pass any required env args here
                 "hasHuman": False
             }
         )
@@ -47,7 +44,7 @@ def main():
             policies_to_train=agentIds,  # Specify which policies to train
         )
         .framework("torch")
-        .env_runners(num_env_runners=2)
+        .env_runners(num_env_runners=1)
         .training(replay_buffer_config={
             "type": "MultiAgentReplayBuffer",
             "capacity": 60000,

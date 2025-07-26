@@ -2,8 +2,9 @@ from ray.rllib.env.multi_agent_env import MultiAgentEnv
 import random
 import gymnasium as gym
 from gymnasium.utils import seeding
-from uno_package import deck, card, utils
+from uno_package import deck, card, utils, player
 from pettingzoo.utils import AgentSelector
+import numpy as np
 
 
 class UnoAgentSelector(AgentSelector):
@@ -34,11 +35,7 @@ class UnoRLLibEnv(MultiAgentEnv):
     def __init__(self, config=None):
         players = config.get("players", None)
         hasHuman = config.get("hasHuman", False)
-        print(players)
         super().__init__()
-        # If your agents never change throughout the episode, set
-        # `self.agents` to the same list as `self.possible_agents`.
-        self.hasHuman = hasHuman
 
         if players is None:
             frodo = player.Player('Frodo')
@@ -54,20 +51,23 @@ class UnoRLLibEnv(MultiAgentEnv):
         self._agent_selector.next(1)
 
         ##for gym/petting zoo
-        self.observation_spaces = {}
-        self.action_spaces = {}
-        for player in self.agents:
-            obsSpace = {}
-            obsSpace[player] = gym.spaces.MultiDiscrete([4,15], dtype=int)
-            obsSpace['played_cards'] = gym.spaces.MultiDiscrete([4,15], dtype=int)
-            obsSpace['top_card'] = gym.spaces.Text(25)
-            obsSpace['chosen_color'] = gym.spaces.Text(6)
-            obsSpace['available_moves'] = gym.spaces.MultiDiscrete([4,15], dtype=int)
-            obsSpace['clockwise'] = gym.spaces.Discrete(2)
-            obsSpace['hand_counts'] = gym.spaces.MultiDiscrete([1,4])
-            self.observation_spaces[player] = gym.spaces.Dict(obsSpace)
+        self.observation_spaces = {agent: gym.spaces.Box(low=0, high=108, shape=(75,), dtype=np.int16) for agent in self.agents}
+        self.action_spaces = {agent: gym.spaces.Discrete(61) for agent in self.agents} 
 
-            self.action_spaces[player] = gym.spaces.Discrete(61)
+        # dict space seems to have issues with rllib, so we will use multidiscrete spaces
+        # first 4 rows are the card representation r,g,b,y, row 5 is top card, chosen color, clockwise, hand counts
+        #for player in self.agents:
+            #obsSpace = {}
+            #obsSpace[player] = gym.spaces.MultiDiscrete([5,15], dtype=int)
+            #obsSpace['played_cards'] = gym.spaces.MultiDiscrete([4,15], dtype=int)
+            #obsSpace['top_card'] = gym.spaces.Discrete(60)
+            #obsSpace['chosen_color'] = gym.spaces.Discrete(4)
+            #obsSpace['available_moves'] = gym.spaces.MultiDiscrete([4,15], dtype=int) # can be replaced with action masking
+            #obsSpace['clockwise'] = gym.spaces.Discrete(2)
+            #obsSpace['hand_counts'] = gym.spaces.MultiDiscrete([1,4])
+            #self.observation_spaces[player] = gym.spaces.Dict(obsSpace)
+
+            #self.action_spaces[player] = gym.spaces.Discrete(61)
 
     def reset(self, *, seed=None, options=None):
         """
@@ -221,14 +221,22 @@ class UnoRLLibEnv(MultiAgentEnv):
         obsSpace = {}
   
         obsSpace[agent] = utils.hand_to_state_rep(agent.hand)
-        obsSpace['played_cards'] = utils.hand_to_state_rep(self.playPile)
-        obsSpace['top_card'] = self.get_top_play_card().__repr__()
-        obsSpace['chosen_color'] = self.wildColor if self.wildColor else None
-        obsSpace['available_moves'] = utils.hand_to_state_rep(self.get_valid_moves_for_player(agent))
-        obsSpace['direction'] = 0 if self.isClockwise else 1
-        obsSpace['hand_counts'] = [p.card_count() for p in self._agent_selector.get_agent_list(1 if self.isClockwise else -1)]
+        rowToAdd = np.zeros((1, 15), dtype=int)
+        rowToAdd[0] = utils.card_to_action_number(self.get_top_play_card())
+        rowToAdd[1] = utils.color_to_number(self.wildColor)
+        rowToAdd[2] = 0 if self.isClockwise else 1
+        cardCounts = [p.card_count() for p in self._agent_selector.get_agent_list(1)]
+        for i in range(len(self.agents)):
+            rowToAdd[i+3] = cardCounts[i]
+        fullObs = np.vstack(obsSpace[agent], rowToAdd).flatten()
+        # obsSpace['played_cards'] = utils.hand_to_state_rep(self.playPile)
+        # obsSpace['top_card'] = self.get_top_play_card().__repr__()
+        # obsSpace['chosen_color'] = self.wildColor if self.wildColor else None
+        # obsSpace['available_moves'] = utils.hand_to_state_rep(self.get_valid_moves_for_player(agent))
+        # obsSpace['direction'] = 0 if self.isClockwise else 1
+        # obsSpace['hand_counts'] = [p.card_count() for p in self._agent_selector.get_agent_list(1 if self.isClockwise else -1)]
         #return { 'observation': obsSpace}
-        return obsSpace
+        return fullObs
 
 
 
