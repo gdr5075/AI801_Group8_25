@@ -33,16 +33,15 @@ class UnoAgentSelector(AgentSelector):
 class UnoRLLibEnv(MultiAgentEnv):
 
     def __init__(self, config=None):
-        players = config.get("players", None)
-        hasHuman = config.get("hasHuman", False)
+        #players is a dict of player objects with the key being the player name
+        self.players = config.get("players", None)
+        self.hasHuman = config.get("hasHuman", False)
         super().__init__()
 
-        if players is None:
-            frodo = player.Player('Frodo')
-            players = [player.Player('Smaug'), frodo, player.Player('Sauron'), player.Player('Gollum')]
-
         #active agents
-        self.agents = self.possible_agents = players
+        names = [p for p in self.players.keys()]
+        #agents are just the player names
+        self.agents = self.possible_agents = names
         
         # """
         # Our AgentSelector utility allows easy cyclic stepping through the agents list.
@@ -54,7 +53,7 @@ class UnoRLLibEnv(MultiAgentEnv):
         self.observation_spaces = {agent: gym.spaces.Box(low=0, high=108, shape=(75,), dtype=np.int16) for agent in self.agents}
         self.action_spaces = {agent: gym.spaces.Discrete(61) for agent in self.agents} 
 
-        # dict space seems to have issues with rllib, so we will use multidiscrete spaces
+        # dict space seems to have issues with rllib, so we will use box spaces
         # first 4 rows are the card representation r,g,b,y, row 5 is top card, chosen color, clockwise, hand counts
         #for player in self.agents:
             #obsSpace = {}
@@ -117,8 +116,8 @@ class UnoRLLibEnv(MultiAgentEnv):
         
         ## deal initial hands
         for player in self.agents:
-            player.clear_hand()
-            self.deal_cards(player, 7)
+            self.players[player].clear_hand()
+            self.deal_cards(self.players[player], 7)
 
         ## get the top card, can't be either wild card
         while True:
@@ -220,12 +219,12 @@ class UnoRLLibEnv(MultiAgentEnv):
         """
         obsSpace = {}
   
-        obsSpace[agent] = utils.hand_to_state_rep(agent.hand)
+        obsSpace[agent] = utils.hand_to_state_rep(self.players[agent].hand)
         rowToAdd = np.zeros((15), dtype=int)
         rowToAdd[0] = utils.card_to_action_number(self.get_top_play_card())
         rowToAdd[1] = utils.color_to_number(self.wildColor)
         rowToAdd[2] = 0 if self.isClockwise else 1
-        cardCounts = [p.card_count() for p in self._agent_selector.get_agent_list(1)]
+        cardCounts = [self.players[p].card_count() for p in self._agent_selector.get_agent_list(1)]
         for i in range(len(self.agents)):
             rowToAdd[i+3] = cardCounts[i]
         fullObs = np.vstack((obsSpace[agent], rowToAdd)).flatten()

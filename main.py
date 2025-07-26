@@ -22,7 +22,7 @@ from ray.rllib.connectors.env_to_module import FlattenObservations
 
 def main():
     agentIds = ['UnoAgent_0', 'UnoAgent_1', 'UnoAgent_2', 'UnoAgent_3']
-    players = [player.Player(id) for id in agentIds]
+    players = {id: player.Player(id) for id in agentIds}
     # unoEnv = env.raw_env(players, False)
     # unoEnv.reset()
 
