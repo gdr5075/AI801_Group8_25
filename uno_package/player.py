@@ -22,8 +22,12 @@ class Player:
             print(f"Wild card played, {self.name} chose {utils.colorize_text_by_color_name(color, color)} as the next color")
 
     def get_action(self, observation):
-        print(f"Player {self.name} is currently playing")
-        moves = utils.state_rep_to_action_numbers_list(observation['observation']['available_moves'])
+        # print(f"Player {self.name} is currently playing")
+        # print(observation)
+        # print(len(observation))
+        #I think this works????
+        unflattened = [observation[0:15], observation[15:30], observation[30:45], observation[45:60]]
+        moves = utils.state_rep_to_action_numbers_list(unflattened)
         print(self.hand)
         print(f'Has moves {moves}')
         if len(moves) == 0:
@@ -38,6 +42,7 @@ class Player:
 
         return action
     
+
     def clear_hand(self):
         self.hand = []
     
