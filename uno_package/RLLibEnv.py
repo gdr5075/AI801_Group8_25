@@ -49,8 +49,9 @@ class UnoRLLibEnv(MultiAgentEnv):
         # """
         self._agent_selector = UnoAgentSelector(self.agents)
 
-        ##for gym/petting zoo
-        self.observation_spaces = {agent: gym.spaces.Box(low=0, high=108, shape=(75,), dtype=np.float32) for agent in self.agents}
+        self.observation_spaces = {agent: gym.spaces.Dict({
+            "observastions": gym.spaces.Box(low=0, high=108, shape=(75,), dtype=np.float32),
+            "action_mask": gym.spaces.Box(low=0, high=1, shape=(61,), dtype=np.float32)}) for agent in self.agents }
         self.action_spaces = {agent: gym.spaces.Discrete(61) for agent in self.agents} 
 
         # dict space seems to have issues with rllib, so we will use box spaces
@@ -129,7 +130,11 @@ class UnoRLLibEnv(MultiAgentEnv):
                 self.playPile.append(c)
                 break
         
+        obs = {}
         current_observation = self.observe(self.current_player)
+        action_mask = utils.available_moves_to_action_mask(self.get_valid_moves_for_player(self.players[self.current_player]))
+        obs["observastions"] = current_observation
+        obs["action_mask"] = action_mask
 
         return {
             self.current_player : current_observation
@@ -159,7 +164,6 @@ class UnoRLLibEnv(MultiAgentEnv):
                 print(f'{stepAgent} drew a playable card')
                 agentDrewPlayableCard = True
         else:
-            print(f'{playedCardRepr[0]}')
             playedCard = self.players[stepAgent].get_card(playedCardRepr[0])
             print(f'Played card: {playedCard}')
             self.play_card(playedCard)
@@ -202,9 +206,13 @@ class UnoRLLibEnv(MultiAgentEnv):
         #TODO - update self.current_player
 
         #even though this is observer on the "current player" it is actually the next player becuase we updated self.current_player
+        obs = {}
         new_observation = self.observe(self.current_player)
+        action_mask = utils.available_moves_to_action_mask(self.get_valid_moves_for_player(self.players[self.current_player]))
+        obs["observastions"] = new_observation
+        obs["action_mask"] = action_mask
         return (
-            {self.current_player: new_observation},
+            {self.current_player: obs},
             self.rewards,
             terminateds,
             {},
