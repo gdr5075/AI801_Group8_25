@@ -28,7 +28,8 @@ class TestLoop(Loop):
                 available_moves = utils.hand_to_state_rep(env.get_valid_moves_for_player(currentPlayer))
                 action = currentPlayer.get_action(available_moves)
                 print('get_action')
-                env.step(action)
+                action_dict = {currentPlayer.name : action}
+                env.step(action_dict)
                 #nextObservation = env.observe(player_name)
                 #reward = env.rewards[player_name]
                 #currentPlayer.update(observation, action, )
