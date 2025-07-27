@@ -146,7 +146,8 @@ class UnoRLLibEnv(MultiAgentEnv):
         direction = 1 if self.isClockwise else -1
         print(f'Current direction: {direction}')
         # gets a tuple of card representation and wild color
-        playedCardRepr = utils.action_to_card_rep(action_dict)
+        action = action_dict[self.current_player]
+        playedCardRepr = utils.action_to_card_rep(action)
         print(f'Played card representation: {playedCardRepr}')
         agentDrewPlayableCard = False
         ## player is drawing
@@ -158,8 +159,6 @@ class UnoRLLibEnv(MultiAgentEnv):
                 print(f'{stepAgent} drew a playable card')
                 agentDrewPlayableCard = True
         else:
-            #TODO - This causes issues becuase it simply gets the card from the players hand
-            #This breaks logic because the cards in players hands do not have color
             print(f'{playedCardRepr[0]}')
             playedCard = self.players[stepAgent].get_card(playedCardRepr[0])
             print(f'Played card: {playedCard}')
@@ -206,7 +205,7 @@ class UnoRLLibEnv(MultiAgentEnv):
         new_observation = self.observe(self.current_player)
         return (
             {self.current_player: new_observation},
-            current_rewards,
+            self.rewards,
             terminateds,
             {},
             {},
