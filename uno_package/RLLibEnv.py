@@ -156,6 +156,8 @@ class UnoRLLibEnv(MultiAgentEnv):
             if len(self.get_valid_moves_for_player(stepAgent)) != 0:
                 agentDrewPlayableCard = True
         else:
+            #TODO - This causes issues becuase it simply gets the card from the players hand
+            #This breaks logic because the cards in players hands do not have color
             playedCard = self.players[stepAgent].get_card(playedCardRepr[0])
             self.play_card(playedCard)
             ## set wild color if wild played
