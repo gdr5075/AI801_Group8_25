@@ -145,7 +145,7 @@ class UnoRLLibEnv(MultiAgentEnv):
         direction = 1 if self.isClockwise else -1
 
         # gets a tuple of card representation and wild color
-        playedCardRepr = utils.action_to_card_rep(action_dict[self.current_player])
+        playedCardRepr = utils.action_to_card_rep(action_dict)
         
         agentDrewPlayableCard = False
         ## player is drawing
@@ -167,7 +167,7 @@ class UnoRLLibEnv(MultiAgentEnv):
 
 
         ## if player's hand is empty, they win
-        if len(stepAgent.hand) == 0:
+        if len(self.players[stepAgent].hand) == 0:
             terminateds["__all__"] = True
             self.winning_player = stepAgent
             self.terminations = {agent: True for agent in self.agents}
@@ -182,7 +182,7 @@ class UnoRLLibEnv(MultiAgentEnv):
         self.rewards[stepAgent] = .01
 
         # TODO: Is this still necessary here? This was a pettingzoo function
-        self._accumulate_rewards()
+        #self._accumulate_rewards()
 
         #eventually want to have more rewards, maybe causing player with less cards to gain cards, especially if it is one card 
         #possible rewards, skipping next agent if they have 1 card, reverse away from next agent if they have 1 card, making the agent with less card draw
@@ -254,19 +254,19 @@ class UnoRLLibEnv(MultiAgentEnv):
                 return
             case card.VALUE.SKIP:
                 self._agent_selector.next(direction)
-                print(f"Skipping {self._agent_selector.selected_agent.name}")
+                print(f"Skipping {self._agent_selector.selected_agent}")
                 return
 
             case card.VALUE.DRAW2:
                 self._agent_selector.next(direction)
                 self.draw_cards(self._agent_selector.selected_agent, 2)
-                print(f"{self._agent_selector.selected_agent.name} drawing 2 cards")
+                print(f"{self._agent_selector.selected_agent} drawing 2 cards")
                 return
 
             case card.VALUE.DRAW4:
                 self._agent_selector.next(direction)
                 self.draw_cards(self._agent_selector.selected_agent, 4)
-                print(f"{self._agent_selector.selected_agent.name} drawing 4 cards")
+                print(f"{self._agent_selector.selected_agent} drawing 4 cards")
                 return
     
     def get_turn_order(self):
@@ -339,7 +339,7 @@ class UnoRLLibEnv(MultiAgentEnv):
 
     ## draws a single card from the deck
     def draw_card(self, player):
-        player.get_hand().append(self.draw_card_from_deck())
+        self.players[player].get_hand().append(self.draw_card_from_deck())
 
 
     ## draws multiple cards from the deck

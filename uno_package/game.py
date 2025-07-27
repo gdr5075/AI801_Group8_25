@@ -83,18 +83,18 @@ class Game:
         if(self.nextPlayerAction != None):
             match (self.nextPlayerAction):
                 case card.VALUE.SKIP:
-                    print(f"Skipping {self.players[self.currentPlayer].name}")
+                    print(f"Skipping {self.players[self.currentPlayer]}")
                     self.currentPlayer += direction
                     self.nextPlayerAction = None
 
                 case card.VALUE.DRAW2:
-                    print(f"{self.players[self.currentPlayer].name} drawing 2 cards")
+                    print(f"{self.players[self.currentPlayer]} drawing 2 cards")
                     self.draw_cards(self.players[self.currentPlayer], 2)
                     self.currentPlayer += direction
                     self.nextPlayerAction = None
 
                 case card.VALUE.DRAW4:
-                    print(f"{self.players[self.currentPlayer].name} drawing 4 cards")
+                    print(f"{self.players[self.currentPlayer]} drawing 4 cards")
                     self.draw_cards(self.players[self.currentPlayer], 4)
                     self.currentPlayer += direction
                     self.nextPlayerAction = None

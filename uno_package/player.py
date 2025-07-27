@@ -23,7 +23,8 @@ class Player:
 
     def get_action(self, observation):
         print(f"Player {self.name} is currently playing")
-        moves = utils.state_rep_to_action_numbers_list(observation['observation']['available_moves'])
+        unflattened = [observation[0:15], observation[15:30], observation[30:45], observation[45:60]]
+        moves = utils.state_rep_to_action_numbers_list(unflattened)
         print(self.hand)
         print(f'Has moves {moves}')
         if len(moves) == 0:
