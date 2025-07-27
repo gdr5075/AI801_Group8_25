@@ -42,12 +42,12 @@ class UnoRLLibEnv(MultiAgentEnv):
         names = [p for p in self.players.keys()]
         #agents are just the player names
         self.agents = self.possible_agents = names
+        print(f'Agents: {self.agents}')
         
         # """
         # Our AgentSelector utility allows easy cyclic stepping through the agents list.
         # """
         self._agent_selector = UnoAgentSelector(self.agents)
-        self._agent_selector.next(1)
 
         ##for gym/petting zoo
         self.observation_spaces = {agent: gym.spaces.Box(low=0, high=108, shape=(75,), dtype=np.float32) for agent in self.agents}
@@ -141,27 +141,32 @@ class UnoRLLibEnv(MultiAgentEnv):
         terminateds = {"__all__": False}
 
         stepAgent = self.current_player
+        print(f'Step agent: {stepAgent}')
         
         direction = 1 if self.isClockwise else -1
-
+        print(f'Current direction: {direction}')
         # gets a tuple of card representation and wild color
         playedCardRepr = utils.action_to_card_rep(action_dict)
-        
+        print(f'Played card representation: {playedCardRepr}')
         agentDrewPlayableCard = False
         ## player is drawing
         if not playedCardRepr:
             self.draw_card(stepAgent)
-
+            print(f'{stepAgent} drew a card')
             ## if player drew card to play, set the boolean to true so it won't skip to the next player for the next step
-            if len(self.get_valid_moves_for_player(stepAgent)) != 0:
+            if len(self.get_valid_moves_for_player(self.players[stepAgent])) != 0:
+                print(f'{stepAgent} drew a playable card')
                 agentDrewPlayableCard = True
         else:
             #TODO - This causes issues becuase it simply gets the card from the players hand
             #This breaks logic because the cards in players hands do not have color
+            print(f'{playedCardRepr[0]}')
             playedCard = self.players[stepAgent].get_card(playedCardRepr[0])
+            print(f'Played card: {playedCard}')
             self.play_card(playedCard)
             ## set wild color if wild played
             self.wildColor = playedCardRepr[1] if not None else None
+            print(f'Wild color: {self.wildColor}')
             # check if card does something to next player
             self.check_auto_action(direction, playedCard)
 
@@ -188,7 +193,7 @@ class UnoRLLibEnv(MultiAgentEnv):
 
         #eventually want to have more rewards, maybe causing player with less cards to gain cards, especially if it is one card 
         #possible rewards, skipping next agent if they have 1 card, reverse away from next agent if they have 1 card, making the agent with less card draw
-        if (not agentDrewPlayableCard):
+        if (not agentDrewPlayableCard and not playedCardRepr):
             self.turn_count += 1
             self.agent_selection = self._agent_selector.next(direction)
 
@@ -223,7 +228,7 @@ class UnoRLLibEnv(MultiAgentEnv):
   
         obsSpace[agent] = utils.hand_to_state_rep(self.players[agent].hand)
         rowToAdd = np.zeros((15), dtype=float)
-        rowToAdd[0] = utils.card_to_action_number(self.get_top_play_card())
+        rowToAdd[0] = utils.card_to_action_number(self.get_top_play_card(), self.wildColor)
         rowToAdd[1] = utils.color_to_number(self.wildColor)
         rowToAdd[2] = 0 if self.isClockwise else 1
         cardCounts = [self.players[p].card_count() for p in self._agent_selector.get_agent_list(1)]

@@ -1,4 +1,5 @@
-from tqdm import tqdm
+from uno_package import utils
+
 
 class Loop():
     def __init__(self):
@@ -18,14 +19,17 @@ class TestLoop(Loop):
                 print(f'Top card is {env.get_top_play_card()}')
                 direction = 1 if env.isClockwise else -1
                 player_name  = env._agent_selector.next(direction)
+                print(f'loop player from agent selector: {player_name}')
                 currentPlayer = env.players[player_name]
+                print(f'Current player: {currentPlayer.name}')
                 env.current_player = player_name
                 print(f'current player {player_name}')
                 observation = env.observe(player_name)
-                action = currentPlayer.get_action(observation)
+                available_moves = utils.hand_to_state_rep(env.get_valid_moves_for_player(currentPlayer))
+                action = currentPlayer.get_action(available_moves)
                 print('get_action')
                 env.step(action)
-                nextObservation = env.observe(player_name)
-                reward = env.rewards[player_name]
+                #nextObservation = env.observe(player_name)
+                #reward = env.rewards[player_name]
                 #currentPlayer.update(observation, action, )
             print(f'Game over: {env.players[env.winning_player].name} wins!')

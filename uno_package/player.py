@@ -11,6 +11,7 @@ class Player:
         
         #self.show_hand()
         moves = game.get_valid_moves(self)
+        print(f'Has moves {moves}')
 
         idx = random.choice(moves)
         cardToPlay = self.hand.pop(idx)
@@ -23,8 +24,7 @@ class Player:
 
     def get_action(self, observation):
         print(f"Player {self.name} is currently playing")
-        unflattened = [observation[0:15], observation[15:30], observation[30:45], observation[45:60]]
-        moves = utils.state_rep_to_action_numbers_list(unflattened)
+        moves = utils.state_rep_to_action_numbers_list(observation)
         print(self.hand)
         print(f'Has moves {moves}')
         if len(moves) == 0:
