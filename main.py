@@ -25,43 +25,46 @@ from uno_package.loop import TestLoop
 def main():
     agentIds = ['UnoAgent_0', 'UnoAgent_1', 'UnoAgent_2', 'UnoAgent_3']
     players = {id: player.Player(id) for id in agentIds}
-    # unoEnv = env.raw_env(players, False)
-    # unoEnv.reset()
-    env_config= {
-        "players": players,     # Pass any required env args here
-        "hasHuman": False
-    }
-    RLLib = RLLibEnv.UnoRLLibEnv(env_config)
 
-    game_loop = TestLoop()
+    doLoopTest = True
 
-    game_loop.start(1, RLLib)
+    if doLoopTest:
+        env_config= {
+            "players": players,     # Pass any required env args here
+            "hasHuman": False
+        }
+        RLLib = RLLibEnv.UnoRLLibEnv(env_config)
 
-    # config = (
-    #     DQNConfig()
-    #     .environment(
-    #         ## not sure if this is correct either, but we can use tune.register_env to register the custom environment if we need to
-    #         env = RLLibEnv.UnoRLLibEnv, #This cant be right.
-    #         env_config= {
-    #             "players": players,     # Pass any required env args here
-    #             "hasHuman": False
-    #         }
-    #     )
-    #     .multi_agent(
-    #         policies={"UnoAgent_0", "UnoAgent_1", "UnoAgent_2", "UnoAgent_3"},
-    #         policy_mapping_fn=lambda agent_id, episode, **kw: agent_id,
-    #         policies_to_train=agentIds,  # Specify which policies to train
-    #     )
-    #     .framework("torch")
-    #     .env_runners(num_env_runners=1)
-    #     .training(replay_buffer_config={
-    #         "type": "MultiAgentReplayBuffer",
-    #         "capacity": 60000,
-    #     })
-    # )
+        game_loop = TestLoop()
 
-    # dqn_w_custom_env = config.build_algo()
-    # dqn_w_custom_env.train()
+        game_loop.start(1, RLLib)
+
+    else:
+        config = (
+            DQNConfig()
+            .environment(
+                ## not sure if this is correct either, but we can use tune.register_env to register the custom environment if we need to
+                env = RLLibEnv.UnoRLLibEnv, #This cant be right.
+                env_config= {
+                    "players": players,     # Pass any required env args here
+                    "hasHuman": False
+                }
+            )
+            .multi_agent(
+                policies={"UnoAgent_0", "UnoAgent_1", "UnoAgent_2", "UnoAgent_3"},
+                policy_mapping_fn=lambda agent_id, episode, **kw: agent_id,
+                policies_to_train=agentIds,  # Specify which policies to train
+            )
+            .framework("torch")
+            .env_runners(num_env_runners=1)
+            .training(replay_buffer_config={
+                "type": "MultiAgentReplayBuffer",
+                "capacity": 60000,
+            })
+        )
+
+        dqn_w_custom_env = config.build_algo()
+        dqn_w_custom_env.train()
 
 
 if __name__ == "__main__":

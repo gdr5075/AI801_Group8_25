@@ -132,7 +132,7 @@ class UnoRLLibEnv(MultiAgentEnv):
         
         obs = {}
         current_observation = self.observe(self.current_player)
-        action_mask = utils.available_moves_to_action_mask(self.get_valid_moves_for_player(self.players[self.current_player]))
+        action_mask = utils.available_moves_to_action_mask(utils.hand_to_state_rep(self.players[self.current_player].hand))
         obs["observastions"] = current_observation
         obs["action_mask"] = action_mask
 
@@ -208,7 +208,7 @@ class UnoRLLibEnv(MultiAgentEnv):
         #even though this is observer on the "current player" it is actually the next player becuase we updated self.current_player
         obs = {}
         new_observation = self.observe(self.current_player)
-        action_mask = utils.available_moves_to_action_mask(self.get_valid_moves_for_player(self.players[self.current_player]))
+        action_mask = utils.available_moves_to_action_mask(utils.hand_to_state_rep(self.players[self.current_player].hand))
         obs["observastions"] = new_observation
         obs["action_mask"] = action_mask
         return (
