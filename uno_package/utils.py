@@ -192,6 +192,8 @@ def state_to_card_rep(state_matrix):
 def card_to_action_number(c, wildColor=None):
     if c.color is card.COLOR.WILD:
         cRep = f'{wildColor} | {c.value.value}'
+    else:
+        cRep = f'{c.color.value} | {c.value.value}'
     return ACTION_MAP[cRep]
 
 def card_rep_to_action_number(repr):

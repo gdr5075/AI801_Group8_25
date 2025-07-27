@@ -17,26 +17,13 @@ from ray.rllib.policy.policy import PolicySpec
 
 import numpy as np
 import torch
-import wandb
-import yaml
-from tqdm import tqdm
-from pettingzoo.classic import connect_four_v3
-
-from agilerl.components.replay_buffer import ReplayBuffer
-from agilerl.hpo.mutation import Mutations
-from agilerl.hpo.tournament import TournamentSelection
-from agilerl.utils.utils import create_population
-from pettingzoo.test import api_test
-from agilerl.components.data import Transition
+from ray.rllib.algorithms.dqn import DQNConfig
+from ray.rllib.connectors.env_to_module import FlattenObservations
 
 
 def main():
     agentIds = ['UnoAgent_0', 'UnoAgent_1', 'UnoAgent_2', 'UnoAgent_3']
-    # me = player.HumanPlayer('Zach')
-
-    frodo = player.Player('Frodo')
-    players = [player.Player('Smaug'), frodo, player.Player('Sauron'), player.Player('Gollum')]
-
+    players = {id: player.Player(id) for id in agentIds}
     # unoEnv = env.raw_env(players, False)
     # unoEnv.reset()
     print(f'{players}')
@@ -49,8 +36,6 @@ def main():
     RLLib = RLLibEnv.UnoRLLibEnv(env_config)
     
     loop  = TestLoop()
-
-    loop.start(1, RLLib)
 
     # config = (
     #     DQNConfig()

@@ -2,8 +2,9 @@ from ray.rllib.env.multi_agent_env import MultiAgentEnv
 import random
 import gymnasium as gym
 from gymnasium.utils import seeding
-from uno_package import deck, card, utils
+from uno_package import deck, card, utils, player
 from pettingzoo.utils import AgentSelector
+import numpy as np
 
 
 class UnoAgentSelector(AgentSelector):
@@ -31,20 +32,16 @@ class UnoAgentSelector(AgentSelector):
 
 class UnoRLLibEnv(MultiAgentEnv):
 
-    def __init__(self, players=None, hasHuman=False, config=None):
+    def __init__(self, config=None):
+        #players is a dict of player objects with the key being the player name
+        self.players = config.get("players", None)
+        self.hasHuman = config.get("hasHuman", False)
         super().__init__()
-        ...
-        # If your agents never change throughout the episode, set
-        # `self.agents` to the same list as `self.possible_agents`.
-        self.hasHuman = hasHuman
 
-        if players is None:
-            frodo = player.Player('Frodo')
-            players = [player.Player('Smaug'), frodo, player.Player('Sauron'), player.Player('Gollum')]
-
-        ## petting zoo variables for AECenv
         #active agents
-        self.agents = self.possible_agents = players
+        names = [p for p in self.players.keys()]
+        #agents are just the player names
+        self.agents = self.possible_agents = names
         
         # """
         # Our AgentSelector utility allows easy cyclic stepping through the agents list.
@@ -53,20 +50,23 @@ class UnoRLLibEnv(MultiAgentEnv):
         self._agent_selector.next(1)
 
         ##for gym/petting zoo
-        self.observation_spaces = {}
-        self.action_spaces = {}
-        for player in self.agents:
-            obsSpace = {}
-            obsSpace[player] = gym.spaces.MultiDiscrete([4,15], dtype=int)
-            obsSpace['played_cards'] = gym.spaces.MultiDiscrete([4,15], dtype=int)
-            obsSpace['top_card'] = gym.spaces.Text(25)
-            obsSpace['chosen_color'] = gym.spaces.Text(6)
-            obsSpace['available_moves'] = gym.spaces.MultiDiscrete([4,15], dtype=int)
-            obsSpace['clockwise'] = gym.spaces.Discrete(2)
-            obsSpace['hand_counts'] = gym.spaces.MultiDiscrete([1,4])
-            self.observation_spaces[player] = gym.spaces.Dict(obsSpace)
+        self.observation_spaces = {agent: gym.spaces.Box(low=0, high=108, shape=(75,), dtype=np.float32) for agent in self.agents}
+        self.action_spaces = {agent: gym.spaces.Discrete(61) for agent in self.agents} 
 
-            self.action_spaces[player] = gym.spaces.Discrete(61)
+        # dict space seems to have issues with rllib, so we will use box spaces
+        # first 4 rows are the card representation r,g,b,y, row 5 is top card, chosen color, clockwise, hand counts
+        #for player in self.agents:
+            #obsSpace = {}
+            #obsSpace[player] = gym.spaces.MultiDiscrete([5,15], dtype=int)
+            #obsSpace['played_cards'] = gym.spaces.MultiDiscrete([4,15], dtype=int)
+            #obsSpace['top_card'] = gym.spaces.Discrete(60)
+            #obsSpace['chosen_color'] = gym.spaces.Discrete(4)
+            #obsSpace['available_moves'] = gym.spaces.MultiDiscrete([4,15], dtype=int) # can be replaced with action masking
+            #obsSpace['clockwise'] = gym.spaces.Discrete(2)
+            #obsSpace['hand_counts'] = gym.spaces.MultiDiscrete([1,4])
+            #self.observation_spaces[player] = gym.spaces.Dict(obsSpace)
+
+            #self.action_spaces[player] = gym.spaces.Discrete(61)
 
     def reset(self, *, seed=None, options=None):
         """
@@ -116,8 +116,8 @@ class UnoRLLibEnv(MultiAgentEnv):
         
         ## deal initial hands
         for player in self.agents:
-            player.clear_hand()
-            self.deal_cards(player, 7)
+            self.players[player].clear_hand()
+            self.deal_cards(self.players[player], 7)
 
         ## get the top card, can't be either wild card
         while True:
@@ -156,7 +156,7 @@ class UnoRLLibEnv(MultiAgentEnv):
             if len(self.get_valid_moves_for_player(stepAgent)) != 0:
                 agentDrewPlayableCard = True
         else:
-            playedCard = stepAgent.get_card(playedCardRepr[0])
+            playedCard = self.players[stepAgent].get_card(playedCardRepr[0])
             self.play_card(playedCard)
             ## set wild color if wild played
             self.wildColor = playedCardRepr[1] if not None else None
@@ -218,7 +218,7 @@ class UnoRLLibEnv(MultiAgentEnv):
             dict: Observation with agents' hands, played cards, top_card, clockwise
         """
         obsSpace = {}
-
+  
         obsSpace[agent] = utils.hand_to_state_rep(self.players[agent].hand)
         rowToAdd = np.zeros((15), dtype=float)
         rowToAdd[0] = utils.card_to_action_number(self.get_top_play_card())
@@ -228,7 +228,12 @@ class UnoRLLibEnv(MultiAgentEnv):
         for i in range(len(self.agents)):
             rowToAdd[i+3] = cardCounts[i]
         fullObs = np.vstack((obsSpace[agent], rowToAdd)).flatten()
-
+        # obsSpace['played_cards'] = utils.hand_to_state_rep(self.playPile)
+        # obsSpace['top_card'] = self.get_top_play_card().__repr__()
+        # obsSpace['chosen_color'] = self.wildColor if self.wildColor else None
+        # obsSpace['available_moves'] = utils.hand_to_state_rep(self.get_valid_moves_for_player(agent))
+        # obsSpace['direction'] = 0 if self.isClockwise else 1
+        # obsSpace['hand_counts'] = [p.card_count() for p in self._agent_selector.get_agent_list(1 if self.isClockwise else -1)]
         #return { 'observation': obsSpace}
         return fullObs
 
