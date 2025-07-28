@@ -165,7 +165,12 @@ def available_moves_to_action_mask(state_matrix):
             if state_matrix[i][j] >= 1:
                 action_mask.append(1)
             else: action_mask.append(0)
-    return action_mask
+    np_action_mask = np.array(action_mask, dtype=float)
+    if np.count_nonzero(np_action_mask) == 0:
+        np_action_mask = np.append(np_action_mask,  1.0)
+    else:
+        np_action_mask = np.append(np_action_mask,  0.0)
+    return np_action_mask
 
 
 # def hand_to_state_rep(state_matrix, hand):

@@ -1,4 +1,4 @@
-from uno_package import player, game, env, utils,deck, loop, card
+from uno_package import player, game, env, utils,deck, loop, card, DQNActionMaskModel
 import gymnasium as gym
 import numpy as np
 from pettingzoo.utils import AgentSelector, wrappers
@@ -18,6 +18,7 @@ import numpy as np
 import torch
 from ray.rllib.algorithms.dqn import DQNConfig
 from ray.rllib.connectors.env_to_module import FlattenObservations
+from ray.rllib.core.rl_module.rl_module import RLModuleSpec
 
 from uno_package.loop import TestLoop
 
@@ -26,7 +27,7 @@ def main():
     agentIds = ['UnoAgent_0', 'UnoAgent_1', 'UnoAgent_2', 'UnoAgent_3']
     players = {id: player.Player(id) for id in agentIds}
 
-    doLoopTest = True
+    doLoopTest = False
 
     if doLoopTest:
         env_config= {
@@ -34,6 +35,7 @@ def main():
             "hasHuman": False
         }
         RLLib = RLLibEnv.UnoRLLibEnv(env_config)
+        RLLib.reset()
 
         game_loop = TestLoop()
 
@@ -58,9 +60,14 @@ def main():
             .framework("torch")
             .env_runners(num_env_runners=1)
             .training(replay_buffer_config={
-                "type": "MultiAgentReplayBuffer",
+                "type": "PrioritizedReplayBuffer",
                 "capacity": 60000,
             })
+            .rl_module(
+            rl_module_spec=RLModuleSpec(
+                module_class=DQNActionMaskModel.ActionMaskDQNTorchRLModule,
+            ),
+    )
         )
 
         dqn_w_custom_env = config.build_algo()
