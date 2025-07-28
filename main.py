@@ -53,14 +53,14 @@ def main():
                 }
             )
             .multi_agent(
-                policies={"UnoAgent_0", "UnoAgent_1", "UnoAgent_2", "UnoAgent_3"},
+                policies={"UnoAgent_0": PolicySpec(), "UnoAgent_1": PolicySpec(), "UnoAgent_2": PolicySpec(), "UnoAgent_3": PolicySpec()},
                 policy_mapping_fn=lambda agent_id, episode, **kw: agent_id,
                 policies_to_train=agentIds,  # Specify which policies to train
             )
             .framework("torch")
             .env_runners(num_env_runners=1)
             .training(replay_buffer_config={
-                "type": "PrioritizedReplayBuffer",
+                "type": "MultiAgentPrioritizedReplayBuffer",
                 "capacity": 60000,
             })
             .rl_module(

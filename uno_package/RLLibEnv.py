@@ -53,6 +53,30 @@ class UnoRLLibEnv(MultiAgentEnv):
         self.observation_spaces = { agent: gym.spaces.Box(low=0, high=108, shape=(136,), dtype=np.float32)for agent in self.agents }
         self.action_spaces = {agent: gym.spaces.Discrete(61) for agent in self.agents} 
 
+        self.deck = deck.UnoMainDeck()
+        self.playPile = []
+        self.winning_player = None
+        self.turn_count = 0
+        self.isClockwise = True
+        self.nextPlayerAction = None
+        self.wildColor = None
+
+        # deal initial hands
+        for player in self.agents:
+            self.players[player].clear_hand()
+            self.deal_cards(self.players[player], 7)
+
+        ## get the top card, can't be either wild card
+        while True:
+            c = self.deck.pop()
+            if c.color == card.COLOR.WILD:
+                self.playPile.append(c)
+            else: 
+                self.add_play_pile_to_main_deck()
+                self.playPile.append(c)
+                break
+        
+
         # dict space seems to have issues with rllib, so we will use box spaces
         # first 4 rows are the card representation r,g,b,y, row 5 is top card, chosen color, clockwise, hand counts
         #for player in self.agents:
@@ -138,7 +162,9 @@ class UnoRLLibEnv(MultiAgentEnv):
 
     def step(self, action_dict):
 
+        print(f'Step called with action_dict: {action_dict}')
         terminateds = {"__all__": False}
+        print('Stepping:')
 
         stepAgent = self.current_player
         print(f'Step agent: {stepAgent}')
@@ -147,6 +173,7 @@ class UnoRLLibEnv(MultiAgentEnv):
         print(f'Current direction: {direction}')
         # gets a tuple of card representation and wild color
         action = action_dict[self.current_player]
+        print(f'Action: {action}')
         playedCardRepr = utils.action_to_card_rep(action)
         print(f'Played card representation: {playedCardRepr}')
         agentDrewPlayableCard = False
@@ -159,8 +186,9 @@ class UnoRLLibEnv(MultiAgentEnv):
                 print(f'{stepAgent} drew a playable card')
                 agentDrewPlayableCard = True
         else:
+            print(self.players[stepAgent].get_hand())
             playedCard = self.players[stepAgent].get_card(playedCardRepr[0])
-            print(f'Played card: {playedCard}')
+            print(f'Played card: {playedCard.color} {playedCard.value}')
             self.play_card(playedCard)
             ## set wild color if wild played
             self.wildColor = playedCardRepr[1] if not None else None
@@ -173,7 +201,8 @@ class UnoRLLibEnv(MultiAgentEnv):
 
         ## if player's hand is empty, they win
         if len(self.players[stepAgent].hand) == 0:
-            terminateds["__all__"] = True
+            for _agent in self.agents:
+                terminateds[_agent] = True
             self.winning_player = stepAgent
             self.terminations = {agent: True for agent in self.agents}
 
@@ -185,9 +214,6 @@ class UnoRLLibEnv(MultiAgentEnv):
                     self.rewards[agent] = -1
 
         self.rewards[stepAgent] = .01
-
-        # TODO: Is this still necessary here? This was a pettingzoo function
-        #self._accumulate_rewards()
 
         #eventually want to have more rewards, maybe causing player with less cards to gain cards, especially if it is one card 
         #possible rewards, skipping next agent if they have 1 card, reverse away from next agent if they have 1 card, making the agent with less card draw
@@ -207,8 +233,8 @@ class UnoRLLibEnv(MultiAgentEnv):
             {self.current_player: new_observation},
             self.rewards,
             terminateds,
-            {},
-            {},
+            self.truncations,
+            self.infos,
         )
 
 

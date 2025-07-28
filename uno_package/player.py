@@ -59,8 +59,11 @@ class Player:
         pass
 
     def get_card(self, card_rep):
+        print(f'Getting card {card_rep} from hand')
         for i in range(len(self.hand)):
+            print(f'Checking {self.hand[i]}')
             if self.hand[i].__repr__() == card_rep:
+                print(f'Found card {self.hand[i]} at index {i}')
                 return self.hand.pop(i)
         return None
 

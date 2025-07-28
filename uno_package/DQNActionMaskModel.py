@@ -39,6 +39,10 @@ class ActionMaskDQNTorchRLModule(TorchRLModule, DefaultDQNRLModule):
         qf_outs = self.compute_q_values(batch)
         print('qf_outs:', qf_outs)
         print('batch:', batch)
+        for i in range(len(batch['obs'][0][75:137])):
+            if batch['obs'][0][75+i] == 0:
+                qf_outs[QF_PREDS][0][i] = float('-inf')
+        print('qf_outs after:', qf_outs)
         # Get action distribution.
         action_dist_cls = self.get_exploration_action_dist_cls()
         action_dist = action_dist_cls.from_logits(qf_outs[QF_PREDS])
@@ -62,7 +66,12 @@ class ActionMaskDQNTorchRLModule(TorchRLModule, DefaultDQNRLModule):
 
         # Q-network forward pass.
         qf_outs = self.compute_q_values(batch)
-
+        print('qf_outs:', qf_outs)
+        print('batch:', batch)
+        for i in range(len(batch['obs'][0][75:137])):
+            if batch['obs'][0][75+i] == 0:
+                qf_outs[QF_PREDS][0][i] = float('-inf')
+        print('qf_outs after:', qf_outs)
         # Get action distribution.
         action_dist_cls = self.get_exploration_action_dist_cls()
         action_dist = action_dist_cls.from_logits(qf_outs[QF_PREDS])
@@ -156,6 +165,12 @@ class ActionMaskDQNTorchRLModule(TorchRLModule, DefaultDQNRLModule):
 
         # Q-network forward passes.
         qf_outs = self.compute_q_values(batch_base)
+        print('qf_outs:', qf_outs)
+        print('batch:', batch)
+        for i in range(len(batch['obs'][0][75:137])):
+            if batch['obs'][0][75+i] == 0:
+                qf_outs[QF_PREDS][0][i] = float('-inf')
+        print('qf_outs after:', qf_outs)
         if self.uses_double_q:
             output[QF_PREDS], output[QF_NEXT_PREDS] = torch.chunk(
                 qf_outs[QF_PREDS], chunks=2, dim=0
