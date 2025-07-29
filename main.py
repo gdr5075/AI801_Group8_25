@@ -59,10 +59,10 @@ def main():
             )
             .framework("torch")
             .env_runners(num_env_runners=1)
-            .training(replay_buffer_config={
-                "type": "MultiAgentPrioritizedReplayBuffer",
-                "capacity": 60000,
-            })
+            # .training(replay_buffer_config={
+            #     "type": "MultiAgentPrioritizedReplayBuffer",
+            #     "capacity": 60000,
+            # })
             .rl_module(
             rl_module_spec=RLModuleSpec(
                 module_class=DQNActionMaskModel.ActionMaskDQNTorchRLModule,

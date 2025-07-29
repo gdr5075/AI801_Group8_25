@@ -168,6 +168,7 @@ class UnoRLLibEnv(MultiAgentEnv):
 
         stepAgent = self.current_player
         print(f'Step agent: {stepAgent}')
+        print(f'Agent has number of cards: {len(self.players[stepAgent].hand)}')
         
         direction = 1 if self.isClockwise else -1
         print(f'Current direction: {direction}')
@@ -217,14 +218,11 @@ class UnoRLLibEnv(MultiAgentEnv):
 
         #eventually want to have more rewards, maybe causing player with less cards to gain cards, especially if it is one card 
         #possible rewards, skipping next agent if they have 1 card, reverse away from next agent if they have 1 card, making the agent with less card draw
-        if (not agentDrewPlayableCard and not playedCardRepr):
+        if (action != 60 or (action == 60 and not agentDrewPlayableCard)):
             self.turn_count += 1
-            self.agent_selection = self._agent_selector.next(direction)
+            self.current_player = self._agent_selector.next(direction)
 
         current_rewards = self.rewards[self.current_player]
-
-
-        #TODO - update self.current_player
 
         #even though this is observer on the "current player" it is actually the next player becuase we updated self.current_player
         new_observation = self.observe(self.current_player)
