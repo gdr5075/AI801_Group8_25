@@ -260,6 +260,7 @@ class UnoRLLibEnv(MultiAgentEnv):
         fullObs = np.vstack((obsSpace[agent], rowToAdd)).flatten()
         action_mask = utils.available_moves_to_action_mask(utils.hand_to_state_rep(self.players[self.current_player].hand))
         fullObs = np.concatenate((fullObs, action_mask))
+        fullObs = fullObs.astype(np.float32)
         # obsSpace['played_cards'] = utils.hand_to_state_rep(self.playPile)
         # obsSpace['top_card'] = self.get_top_play_card().__repr__()
         # obsSpace['chosen_color'] = self.wildColor if self.wildColor else None
