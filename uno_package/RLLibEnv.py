@@ -138,12 +138,10 @@ class UnoRLLibEnv(MultiAgentEnv):
         
         #TODO - are these still needed?
         self.rewards = {agent: 0 for agent in self.agents}
-        self._cumulative_rewards = {agent: 0 for agent in self.agents}
         self.terminations = {agent: False for agent in self.agents}
         self.truncations = {agent: False for agent in self.agents}
         self.infos = {agent: {} for agent in self.agents}
         self.state = {agent: None for agent in self.agents}
-        self.observations = {agent: None for agent in self.agents}
         
         ## deal initial hands
         for player in self.agents:
@@ -160,18 +158,18 @@ class UnoRLLibEnv(MultiAgentEnv):
                 self.playPile.append(c)
                 break
         
-        current_observation = self.observe(self.current_player)
+        obs = { player: self.observe(player) for player in self.agents }
 
-        return {
-            self.current_player : current_observation
-        },{} #<-- And the empty info dict
+        return (
+            obs,
+            self.infos,
+        )
 
 
     def step(self, action_dict):
         print(f'turn count: {self.turn_count}')
 
         print(f'Step called with action_dict: {action_dict}')
-        terminateds = {"__all__": False}
         print(f'Top card: {self.get_top_play_card()}')
 
         stepAgent = self.current_player
@@ -211,7 +209,7 @@ class UnoRLLibEnv(MultiAgentEnv):
 
         ## if player's hand is empty, they win
         if len(self.players[stepAgent].hand) == 0:
-            terminateds = {"__all__": True}
+            self.terminations = {agent: True for agent in self.agents}
             self.winning_player = stepAgent
             self.terminations = {agent: True for agent in self.agents}
             for agent in self.agents:
@@ -234,7 +232,7 @@ class UnoRLLibEnv(MultiAgentEnv):
         return (
             {self.current_player: new_observation},
             self.rewards,
-            terminateds,
+            self.terminations,
             self.truncations,
             self.infos,
         )
@@ -421,14 +419,6 @@ class UnoRLLibEnv(MultiAgentEnv):
 
     def shuffle_players(self):
         random.shuffle(self.players)
-
-
-    def render(self):
-        """
-        Renders the environment. In human mode, it can print to terminal, open
-        up a graphical window, or open up some other display that a human can see and understand.
-        """
-        pass
 
     def observation_space(self, agent):
         return self.observation_spaces[agent]

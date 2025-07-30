@@ -22,9 +22,14 @@ from ray.rllib.core.rl_module.rl_module import RLModuleSpec
 
 from uno_package.loop import TestLoop
 from ray import tune
-
+import tensorflow as tf
+from ray.tune.schedulers import PopulationBasedTraining
+import pprint
+from ray.rllib.algorithms.algorithm import Algorithm
 
 def main():
+
+    tf.debugging.experimental.enable_dump_debug_info("~/ray_results", tensor_debug_mode="FULL_HEALTH", circular_buffer_size=-1)
     agentIds = ['UnoAgent_0', 'UnoAgent_1', 'UnoAgent_2', 'UnoAgent_3']
     players = {id: player.Player(id) for id in agentIds}
 
@@ -56,6 +61,34 @@ def main():
 
     else:
         tune.register_env("UnoRLLibEnv", lambda config: RLLibEnv.UnoRLLibEnv(config))
+        # Postprocess the perturbed config to ensure it's still valid
+        def explore(config):
+            # ensure we collect enough timesteps to do sgd
+            if config["train_batch_size"] < config["sgd_minibatch_size"] * 2:
+                config["train_batch_size"] = config["sgd_minibatch_size"] * 2
+            # ensure we run at least one sgd iter
+            if config["num_sgd_iter"] < 1:
+                config["num_sgd_iter"] = 1
+            return config
+
+        hyperparam_mutations = {
+        "clip_param": lambda: random.uniform(0.01, 0.5),
+        "lr": [1e-3, 5e-4, 1e-4, 5e-5, 1e-5],
+        "num_epochs": lambda: random.randint(1, 30),
+        "minibatch_size": lambda: random.randint(128, 16384),
+        "train_batch_size_per_learner": lambda: random.randint(2000, 160000),
+    }
+
+        pbt = PopulationBasedTraining(
+            time_attr="time_total_s",
+            perturbation_interval=120,
+            resample_probability=0.25,
+            # Specifies the mutations of these hyperparams
+            hyperparam_mutations=hyperparam_mutations,
+            custom_explore_fn=explore,
+        )
+
+        stopping_criteria = {"training_iteration": 100, "episode_reward_mean": 300}
         config = (
             DQNConfig()
             .environment(
@@ -84,19 +117,60 @@ def main():
             #     dueling=True,        # Enable dueling DQN
             #     double_q=True        # Enable Double Q-learning
             # )
+            .training(
+                # These params are tuned from a fixed starting value.
+                gamma=0.99,
+                lr=1e-4,
+                # These params start off randomly drawn from a set.
+                num_epochs=tune.choice([10, 20, 30]),
+                minibatch_size=tune.choice([128, 512, 2048]),
+                train_batch_size_per_learner=tune.choice([10000, 20000, 40000]),
+            )
             .rl_module(
                 rl_module_spec=RLModuleSpec(
                     module_class=DQNActionMaskModel.ActionMaskDQNTorchRLModule,
                 ),
             )
-            # .resources(
-            #     num_gpus=1,          # Set to 1 or more if using GPUs
-            #     num_cpus_per_worker=1
-            # )
+            .resources(
+                num_gpus=1,          # Set to 1 or more if using GPUs
+            )
         )
 
-        dqn_w_custom_env = config.build_algo()
-        dqn_w_custom_env.train()
+        tuner = tune.Tuner(
+        "DQN",
+        tune_config=tune.TuneConfig(
+            metric="env_runners/episode_return_mean",
+            mode="max",
+            scheduler=pbt,
+            num_samples=1
+        ),
+        param_space=config,
+        run_config=tune.RunConfig(stop=stopping_criteria),
+    )
+    results = tuner.fit()
+
+    best_result = results.get_best_result()
+
+    print("Best performing trial's final set of hyperparameters:\n")
+    pprint.pprint(
+        {k: v for k, v in best_result.config.items() if k in hyperparam_mutations}
+    )
+
+    print("\nBest performing trial's final reported metrics:\n")
+
+    metrics_to_print = [
+        "episode_reward_mean",
+        "episode_reward_max",
+        "episode_reward_min",
+        "episode_len_mean",
+    ]
+    pprint.pprint({k: v for k, v in best_result.metrics.items() if k in metrics_to_print})
+
+    loaded_ppo = Algorithm.from_checkpoint(best_result.checkpoint)
+    loaded_policy = loaded_ppo.get_policy()
+
+    # See your trained policy in action
+    # loaded_policy.compute_single_action(...)
 
 
 if __name__ == "__main__":
