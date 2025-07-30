@@ -29,6 +29,12 @@ class UnoAgentSelector(AgentSelector):
             agents.append(self.agent_order[agentNumber - 1])
             agentNumber += direction
         return agents
+    
+    ## this gets the next agent in the current direction without changing the current agent
+    def get_next_agent(self, direction) -> any:
+        """Get the next agent."""
+        agentnum = (self._current_agent + direction) % len(self.agent_order)
+        return self.agent_order[agentnum - 1]
 
 class UnoRLLibEnv(MultiAgentEnv):
 
@@ -36,6 +42,7 @@ class UnoRLLibEnv(MultiAgentEnv):
         #players is a dict of player objects with the key being the player name
         self.players = config.get("players", None)
         self.hasHuman = config.get("hasHuman", False)
+        self.reward_values = config.get("reward_values", None)
         super().__init__()
 
         #active agents
@@ -195,6 +202,7 @@ class UnoRLLibEnv(MultiAgentEnv):
             self.wildColor = playedCardRepr[1] if not None else None
             print(f'Wild color: {self.wildColor}')
             # check if card does something to next player
+            self.handle_rewards(playedCard, direction)
             self.check_auto_action(direction, playedCard)
 
         direction = 1 if self.isClockwise else -1
@@ -202,27 +210,22 @@ class UnoRLLibEnv(MultiAgentEnv):
 
         ## if player's hand is empty, they win
         if len(self.players[stepAgent].hand) == 0:
-            for _agent in self.agents:
-                terminateds[_agent] = True
+            terminateds = {"__all__": True}
             self.winning_player = stepAgent
             self.terminations = {agent: True for agent in self.agents}
-
-        if self.terminations[stepAgent]:
             for agent in self.agents:
                 if self.winning_player == agent:
-                    self.rewards[agent] = 1
+                    self.rewards[agent] += self.reward_values['win']
                 else:
-                    self.rewards[agent] = -1
+                    self.rewards[agent] += self.reward_values['lose']
 
-        self.rewards[stepAgent] = .01
+        print(f"current rewards: {self.rewards[stepAgent]}")
 
         #eventually want to have more rewards, maybe causing player with less cards to gain cards, especially if it is one card 
         #possible rewards, skipping next agent if they have 1 card, reverse away from next agent if they have 1 card, making the agent with less card draw
         if (action != 60 or (action == 60 and not agentDrewPlayableCard)):
             self.turn_count += 1
             self.current_player = self._agent_selector.next(direction)
-
-        current_rewards = self.rewards[self.current_player]
 
         #even though this is observer on the "current player" it is actually the next player becuase we updated self.current_player
         new_observation = self.observe(self.current_player)
@@ -270,7 +273,40 @@ class UnoRLLibEnv(MultiAgentEnv):
         return fullObs
 
 
+    def handle_rewards(self, playedCard, direction):
+        """Handle rewards for the played card."""
 
+        nextAgent = self.players[self._agent_selector.get_next_agent(direction)]
+        
+        match (playedCard.value):
+            case card.VALUE.REVERSE:
+                if(nextAgent.card_count() == 1):
+                    reward = self.reward_values['reverse_from_uno']
+                    self.rewards[self.current_player] += reward
+                    print(f"{self.current_player} gets reward {reward} for reversing away from {nextAgent.name} with 1 card")
+                return
+            case card.VALUE.SKIP:
+                if(nextAgent.card_count() == 1):
+                    reward = self.reward_values['skip_uno']
+                    self.rewards[self.current_player] += reward
+                    print(f"{self.current_player} gets reward {reward} for skipping {nextAgent.name} with 1 card")
+                return
+
+            case card.VALUE.DRAW2:
+                if(nextAgent.card_count() == 1):
+                    reward = self.reward_values['draw2_uno']
+                    self.rewards[self.current_player] += reward
+                    print(f"{self.current_player} gets reward {reward} for making {nextAgent.name} draw 2 with 1 card")
+                return
+
+            case card.VALUE.DRAW4:
+                if(nextAgent.card_count() == 1):
+                    reward = self.reward_values['draw4_uno']
+                    self.rewards[self.current_player] += reward
+                    print(f"{self.current_player} gets reward {reward} for making {nextAgent.name} draw 4 with 1 card")
+                return
+        
+        self.rewards[self.current_player] -= self.reward_values['turn']
 
     ## checks if special action happens to the next player
     ## if it happens to a player, it will perform the action and/or skip their turn

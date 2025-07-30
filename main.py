@@ -29,6 +29,17 @@ def main():
 
     doLoopTest = False
 
+    ## feel free to change
+    reward_values = {
+        'draw2_uno': .5,
+        'draw4_uno': .5,
+        'skip_uno': .2,
+        'reverse_from_uno': .2,
+        'turn': -0.1,
+        'win': 10.0,
+        'lose': -10.0,
+    }
+
     if doLoopTest:
         env_config= {
             "players": players,     # Pass any required env args here
@@ -49,7 +60,8 @@ def main():
                 env = RLLibEnv.UnoRLLibEnv, #This cant be right.
                 env_config= {
                     "players": players,     # Pass any required env args here
-                    "hasHuman": False
+                    "hasHuman": False,
+                    "reward_values": reward_values,
                 }
             )
             .multi_agent(
