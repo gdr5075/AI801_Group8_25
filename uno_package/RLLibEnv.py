@@ -113,8 +113,8 @@ class UnoRLLibEnv(MultiAgentEnv):
         can be called without issues.
         Here it sets up the state dictionary which is used by step() and the observations dictionary which is used by step() and observe()
         """
-        if seed is not None:
-            self.np_random, self.np_random_seed = seeding.np_random(seed)
+        super().reset(seed=seed, options=options)
+
         self.deck = deck.UnoMainDeck()
         self.playPile = []
         self.winning_player = None
@@ -129,10 +129,6 @@ class UnoRLLibEnv(MultiAgentEnv):
 
         self.rewards = {i: 0 for i in self.agents}
         self._cumulative_rewards = {name: 0 for name in self.agents}
-
-        # Unlike gymnasium's Env, the environment is responsible for setting the random seed explicitly.
-        if seed is not None:
-            self.np_random, self.np_random_seed = seeding.np_random(seed)
 
         self.agents = self.possible_agents[:]
         
@@ -263,6 +259,7 @@ class UnoRLLibEnv(MultiAgentEnv):
         fullObs = np.vstack((obsSpace[agent], rowToAdd)).flatten()
         action_mask = utils.available_moves_to_action_mask(utils.hand_to_state_rep(self.players[self.current_player].hand))
         fullObs = np.concatenate((fullObs, action_mask))
+        fullObs = fullObs.astype(np.float32)
         # obsSpace['played_cards'] = utils.hand_to_state_rep(self.playPile)
         # obsSpace['top_card'] = self.get_top_play_card().__repr__()
         # obsSpace['chosen_color'] = self.wildColor if self.wildColor else None
@@ -306,7 +303,7 @@ class UnoRLLibEnv(MultiAgentEnv):
                     print(f"{self.current_player} gets reward {reward} for making {nextAgent.name} draw 4 with 1 card")
                 return
         
-        self.rewards[self.current_player] -= self.reward_values['turn']
+        self.rewards[self.current_player] += self.reward_values['turn']
 
     ## checks if special action happens to the next player
     ## if it happens to a player, it will perform the action and/or skip their turn
