@@ -39,6 +39,7 @@ class UnoAgentSelector(AgentSelector):
 class UnoRLLibEnv(MultiAgentEnv):
 
     def __init__(self, config=None):
+        print('Initializing UnoRLLibEnv')
         #players is a dict of player objects with the key being the player name
         self.players = config.get("players", None)
         self.hasHuman = config.get("hasHuman", False)
@@ -55,6 +56,7 @@ class UnoRLLibEnv(MultiAgentEnv):
         # Our AgentSelector utility allows easy cyclic stepping through the agents list.
         # """
         self._agent_selector = UnoAgentSelector(self.agents)
+        self._agent_selector.reset()
 
         ## last 61 are action mask
         self.observation_spaces = { agent: gym.spaces.Box(low=0, high=108, shape=(136,), dtype=np.float32)for agent in self.agents }
@@ -113,6 +115,7 @@ class UnoRLLibEnv(MultiAgentEnv):
         can be called without issues.
         Here it sets up the state dictionary which is used by step() and the observations dictionary which is used by step() and observe()
         """
+        print('Resetting UnoRLLibEnv')
         super().reset(seed=seed, options=options)
 
         self.deck = deck.UnoMainDeck()
@@ -126,6 +129,7 @@ class UnoRLLibEnv(MultiAgentEnv):
         ## for pettingzoo
         ##reset player order
         self.current_player = self.agents[0]
+        self._agent_selector.reset()
 
         self.rewards = {i: 0 for i in self.agents}
         self._cumulative_rewards = {name: 0 for name in self.agents}
@@ -164,10 +168,11 @@ class UnoRLLibEnv(MultiAgentEnv):
 
 
     def step(self, action_dict):
+        print(f'turn count: {self.turn_count}')
 
         print(f'Step called with action_dict: {action_dict}')
         terminateds = {"__all__": False}
-        print('Stepping:')
+        print(f'Top card: {self.get_top_play_card()}')
 
         stepAgent = self.current_player
         print(f'Step agent: {stepAgent}')
@@ -246,6 +251,7 @@ class UnoRLLibEnv(MultiAgentEnv):
         Returns:
             dict: Observation with agents' hands, played cards, top_card, clockwise
         """
+        print(f'Observing agent: {agent}')
         obsSpace = {}
   
         obsSpace[agent] = utils.hand_to_state_rep(self.players[agent].hand)
@@ -257,7 +263,7 @@ class UnoRLLibEnv(MultiAgentEnv):
         for i in range(len(self.agents)):
             rowToAdd[i+3] = cardCounts[i]
         fullObs = np.vstack((obsSpace[agent], rowToAdd)).flatten()
-        action_mask = utils.available_moves_to_action_mask(utils.hand_to_state_rep(self.players[self.current_player].hand))
+        action_mask = utils.available_moves_to_action_mask(utils.hand_to_state_rep(self.get_valid_moves_for_player(self.players[agent])))
         fullObs = np.concatenate((fullObs, action_mask))
         fullObs = fullObs.astype(np.float32)
         # obsSpace['played_cards'] = utils.hand_to_state_rep(self.playPile)

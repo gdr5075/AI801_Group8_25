@@ -21,6 +21,7 @@ from ray.rllib.connectors.env_to_module import FlattenObservations
 from ray.rllib.core.rl_module.rl_module import RLModuleSpec
 
 from uno_package.loop import TestLoop
+from ray import tune
 
 
 def main():
@@ -43,7 +44,8 @@ def main():
     if doLoopTest:
         env_config= {
             "players": players,     # Pass any required env args here
-            "hasHuman": False
+            "hasHuman": False,
+            "reward_values": reward_values,
         }
         RLLib = RLLibEnv.UnoRLLibEnv(env_config)
         RLLib.reset()
@@ -53,11 +55,12 @@ def main():
         game_loop.start(1, RLLib)
 
     else:
+        tune.register_env("UnoRLLibEnv", lambda config: RLLibEnv.UnoRLLibEnv(config))
         config = (
             DQNConfig()
             .environment(
                 ## not sure if this is correct either, but we can use tune.register_env to register the custom environment if we need to
-                env = RLLibEnv.UnoRLLibEnv, #This cant be right.
+                env = "UnoRLLibEnv", #This cant be right.
                 env_config= {
                     "players": players,     # Pass any required env args here
                     "hasHuman": False,
@@ -71,15 +74,25 @@ def main():
             )
             .framework("torch")
             .env_runners(num_env_runners=1)
-            # .training(replay_buffer_config={
-            #     "type": "MultiAgentPrioritizedReplayBuffer",
-            #     "capacity": 60000,
-            # })
+            # .training(
+            #     train_batch_size=32,
+            #     gamma=0.99,
+            #     lr=1e-3,
+            #     replay_buffer_config={
+            #         "capacity": 60000,
+            #     },
+            #     dueling=True,        # Enable dueling DQN
+            #     double_q=True        # Enable Double Q-learning
+            # )
             .rl_module(
-            rl_module_spec=RLModuleSpec(
-                module_class=DQNActionMaskModel.ActionMaskDQNTorchRLModule,
-            ),
-    )
+                rl_module_spec=RLModuleSpec(
+                    module_class=DQNActionMaskModel.ActionMaskDQNTorchRLModule,
+                ),
+            )
+            # .resources(
+            #     num_gpus=1,          # Set to 1 or more if using GPUs
+            #     num_cpus_per_worker=1
+            # )
         )
 
         dqn_w_custom_env = config.build_algo()
