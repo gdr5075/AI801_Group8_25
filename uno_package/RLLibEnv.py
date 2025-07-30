@@ -84,22 +84,6 @@ class UnoRLLibEnv(MultiAgentEnv):
                 self.add_play_pile_to_main_deck()
                 self.playPile.append(c)
                 break
-        
-
-        # dict space seems to have issues with rllib, so we will use box spaces
-        # first 4 rows are the card representation r,g,b,y, row 5 is top card, chosen color, clockwise, hand counts
-        #for player in self.agents:
-            #obsSpace = {}
-            #obsSpace[player] = gym.spaces.MultiDiscrete([5,15], dtype=int)
-            #obsSpace['played_cards'] = gym.spaces.MultiDiscrete([4,15], dtype=int)
-            #obsSpace['top_card'] = gym.spaces.Discrete(60)
-            #obsSpace['chosen_color'] = gym.spaces.Discrete(4)
-            #obsSpace['available_moves'] = gym.spaces.MultiDiscrete([4,15], dtype=int) # can be replaced with action masking
-            #obsSpace['clockwise'] = gym.spaces.Discrete(2)
-            #obsSpace['hand_counts'] = gym.spaces.MultiDiscrete([1,4])
-            #self.observation_spaces[player] = gym.spaces.Dict(obsSpace)
-
-            #self.action_spaces[player] = gym.spaces.Discrete(61)
 
     def reset(self, *, seed=None, options=None):
         """
@@ -139,6 +123,7 @@ class UnoRLLibEnv(MultiAgentEnv):
         #TODO - are these still needed?
         self.rewards = {agent: 0 for agent in self.agents}
         self.terminations = {agent: False for agent in self.agents}
+        self.terminations["__all__"] = False
         self.truncations = {agent: False for agent in self.agents}
         self.infos = {agent: {} for agent in self.agents}
         self.state = {agent: None for agent in self.agents}
@@ -210,6 +195,7 @@ class UnoRLLibEnv(MultiAgentEnv):
         ## if player's hand is empty, they win
         if len(self.players[stepAgent].hand) == 0:
             self.terminations = {agent: True for agent in self.agents}
+            self.terminations["__all__"] = True
             self.winning_player = stepAgent
             self.terminations = {agent: True for agent in self.agents}
             for agent in self.agents:

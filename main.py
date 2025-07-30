@@ -61,6 +61,8 @@ def main():
 
     else:
         tune.register_env("UnoRLLibEnv", lambda config: RLLibEnv.UnoRLLibEnv(config))
+
+        ## taken from https://docs.ray.io/en/latest/tune/examples/pbt_ppo_example.html
         # Postprocess the perturbed config to ensure it's still valid
         def explore(config):
             # ensure we collect enough timesteps to do sgd
@@ -92,8 +94,7 @@ def main():
         config = (
             DQNConfig()
             .environment(
-                ## not sure if this is correct either, but we can use tune.register_env to register the custom environment if we need to
-                env = "UnoRLLibEnv", #This cant be right.
+                env = "UnoRLLibEnv", 
                 env_config= {
                     "players": players,     # Pass any required env args here
                     "hasHuman": False,
