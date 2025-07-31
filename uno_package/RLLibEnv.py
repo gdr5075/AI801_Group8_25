@@ -143,10 +143,10 @@ class UnoRLLibEnv(MultiAgentEnv):
                 self.playPile.append(c)
                 break
         
-        obs = { player: self.observe(player) for player in self.agents }
+        current_observation = self.observe(self.current_player)
 
         return (
-            obs,
+            {self.current_player : current_observation},
             self.infos,
         )
 
