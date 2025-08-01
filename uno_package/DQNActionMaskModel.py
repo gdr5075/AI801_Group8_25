@@ -37,24 +37,25 @@ class ActionMaskDQNTorchRLModule(TorchRLModule, DefaultDQNRLModule):
     def _forward_inference(self, batch: Dict[str, TensorType]) -> Dict[str, TensorType]:
         # Q-network forward pass.
         qf_outs = self.compute_q_values(batch)
-        print('qf_outs:', qf_outs)
-        print('batch:', batch)
-        print('Red')
-        print(batch['obs'][0][0:15])
-        print('Green')
-        print(batch['obs'][0][15: 30])
-        print('Yellow')
-        print(batch['obs'][0][30:45])
-        print('Blue')
-        print(batch['obs'][0][45:60])
-        print('observation')
-        print(batch['obs'][0][60:75])
-        print('action mask')
-        print(batch['obs'][0][75:137])
+        # print('qf_outs:', qf_outs)
+        # print('batch:', batch)
+        # print('Red')
+        # print(batch['obs'][0][0:15])
+        # print('Green')
+        # print(batch['obs'][0][15: 30])
+        # print('Yellow')
+        # print(batch['obs'][0][30:45])
+        # print('Blue')
+        # print(batch['obs'][0][45:60])
+        # print('observation')
+        # print(batch['obs'][0][60:75])
+        # print('action mask')
+        # print(batch['obs'][0][75:137])
+        print('_forward_inference')
         for i in range(len(batch['obs'][0][75:137])):
             if batch['obs'][0][75+i] == 0:
                 qf_outs[QF_PREDS][0][i] = float('-inf')
-        print('qf_outs after:', qf_outs)
+        # print('qf_outs after:', qf_outs)
         # Get action distribution.
         action_dist_cls = self.get_exploration_action_dist_cls()
         action_dist = action_dist_cls.from_logits(qf_outs[QF_PREDS])
@@ -78,24 +79,25 @@ class ActionMaskDQNTorchRLModule(TorchRLModule, DefaultDQNRLModule):
 
         # Q-network forward pass.
         qf_outs = self.compute_q_values(batch)
-        print('qf_outs:', qf_outs)
-        print('batch:', batch)
-        print('Red')
-        print(batch['obs'][0][0:15])
-        print('Green')
-        print(batch['obs'][0][15: 30])
-        print('Yellow')
-        print(batch['obs'][0][30:45])
-        print('Blue')
-        print(batch['obs'][0][45:60])
-        print('observation')
-        print(batch['obs'][0][60:75])
-        print('action mask')
-        print(batch['obs'][0][75:137])
+        # print('qf_outs:', qf_outs)
+        # print('batch:', batch)
+        # print('Red')
+        # print(batch['obs'][0][0:15])
+        # print('Green')
+        # print(batch['obs'][0][15: 30])
+        # print('Yellow')
+        # print(batch['obs'][0][30:45])
+        # print('Blue')
+        # print(batch['obs'][0][45:60])
+        # print('observation')
+        # print(batch['obs'][0][60:75])
+        # print('action mask')
+        # print(batch['obs'][0][75:137])
+        print('_forward_exploration')
         for i in range(len(batch['obs'][0][75:137])):
             if batch['obs'][0][75+i] == 0:
                 qf_outs[QF_PREDS][0][i] = float('-inf')
-        print('qf_outs after:', qf_outs)
+        # print('qf_outs after:', qf_outs)
         # Get action distribution.
         action_dist_cls = self.get_exploration_action_dist_cls()
         action_dist = action_dist_cls.from_logits(qf_outs[QF_PREDS])
@@ -189,33 +191,37 @@ class ActionMaskDQNTorchRLModule(TorchRLModule, DefaultDQNRLModule):
 
         # Q-network forward passes.
         qf_outs = self.compute_q_values(batch_base)
-        print('qf_outs:', qf_outs)
-        print('batch:', batch)
-        print('Red')
-        print(batch['obs'][0][0:15])
-        print('Green')
-        print(batch['obs'][0][15: 30])
-        print('Yellow')
-        print(batch['obs'][0][30:45])
-        print('Blue')
-        print(batch['obs'][0][45:60])
-        print('observation')
-        print(batch['obs'][0][60:75])
-        print('action mask')
-        print(batch['obs'][0][75:137])
+        # print('qf_outs:', qf_outs)
+        # print('batch:', batch)
+        # print('Red')
+        # print(batch['obs'][0][0:15])
+        # print('Green')
+        # print(batch['obs'][0][15: 30])
+        # print('Yellow')
+        # print(batch['obs'][0][30:45])
+        # print('Blue')
+        # print(batch['obs'][0][45:60])
+        # print('observation')
+        # print(batch['obs'][0][60:75])
+        # print('action mask')
+        # print(batch['obs'][0][75:137])
+        print('_forward_train')
         for i in range(len(batch['obs'][0][75:137])):
             if batch['obs'][0][75+i] == 0:
                 qf_outs[QF_PREDS][0][i] = float('-inf')
-        print('qf_outs after:', qf_outs)
+        # print('qf_outs after:', qf_outs)
         if self.uses_double_q:
             output[QF_PREDS], output[QF_NEXT_PREDS] = torch.chunk(
                 qf_outs[QF_PREDS], chunks=2, dim=0
             )
         else:
             output[QF_PREDS] = qf_outs[QF_PREDS]
+        print('_forward_train2')
         # The target Q-values for the next observations.
         qf_target_next_outs = self.forward_target(batch_target)
+        print('_forward_train3')
         output[QF_TARGET_NEXT_PREDS] = qf_target_next_outs[QF_PREDS]
+        print('_forward_train4')
         # We are learning a Q-value distribution.
         if self.num_atoms > 1:
             # Add distribution artefacts to the output.
@@ -228,13 +234,18 @@ class ActionMaskDQNTorchRLModule(TorchRLModule, DefaultDQNRLModule):
             # Probabilities of the target Q-value distribution of the next state.
             output[QF_TARGET_NEXT_PROBS] = qf_target_next_outs[QF_PROBS]
 
+        print('_forward_train5')
         # Add the states to the output, if the module is stateful.
         if Columns.STATE_OUT in qf_outs:
             output[Columns.STATE_OUT] = qf_outs[Columns.STATE_OUT]
+
+        print('_forward_train6')
         # For correctness, also add the output states from the target forward pass.
         # Note, we do not backpropagate through this state.
         if Columns.STATE_OUT in qf_target_next_outs:
             output[Columns.NEXT_STATE_OUT] = qf_target_next_outs[Columns.STATE_OUT]
+
+        print('_forward_train7')
 
         return output
     
