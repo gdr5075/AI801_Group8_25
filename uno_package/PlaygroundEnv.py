@@ -167,10 +167,6 @@ class PlaygroundEnv(gym.Env):
             self.turn_count += 1
             self.current_player = self._agent_selector.next(direction)
 
-
-
-        self.current_player = self._agent_selector.next(direction)
-
         return self.observe(self.current_player), self.reward, self.terminated, self.truncated, {}
 
 
