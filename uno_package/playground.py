@@ -5,9 +5,6 @@ import numpy as np
 from ray.rllib.algorithms.algorithm import Algorithm
 from uno_package import player, RLLibEnvSingleAgent, utils, PlaygroundEnv
 
-
-
-
 def load_checkpoint(checkpoint_number=5):
     dir_path = os.path.dirname(os.path.realpath(__file__))+"/../"
     checkpoint_path = f"file://{dir_path}/checkpoints/checkpoint_{checkpoint_number}"
@@ -19,6 +16,26 @@ def load_checkpoint(checkpoint_number=5):
         print(f"Error loading checkpoint {checkpoint_number}: {e}")
         return None
 
+
+def load_latest_checkpoint():
+    dir_path = os.path.dirname(os.path.realpath(__file__))+"/../checkpoints/"
+    checkpoint_path = get_latest_created_folder(dir_path)
+
+    try:
+        saved_algorithm = Algorithm.from_checkpoint(path=checkpoint_path)
+        print(f"Successfully loaded checkpoint from {checkpoint_path}")
+        return saved_algorithm
+    except Exception as e:
+        print(f"Error loading checkpoint at {checkpoint_path}: {e}")
+        return None
+    
+def get_latest_created_folder(directory):
+    # Get all subdirectories in the given directory
+    subdirs = [os.path.join(directory, d) for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
+    
+    # Find the newest folder based on creation time
+    latest_folder = max(subdirs, key=os.path.getctime)
+    return latest_folder
 
 def play_single_game(algorithm, num_random_players=3, verbose=True):
 
@@ -155,7 +172,7 @@ def play_multiple_games(algorithm, num_games=10, num_random_players=3):
     print(f"Random player wins: {results['random_player_wins']}")
     print(f"Win rate: {results['trained_win_rate']}")
     print(f"Average turns per game: {results['average_turns']:.1f}")
-    print(f"{'='*30}")
+    print(f"{'='*50}")
     
     return results
 
@@ -164,6 +181,6 @@ def demo_single_game(checkpoint_num):
     algorithm = load_checkpoint(checkpoint_num)
     play_single_game(algorithm, num_random_players=3, verbose=True)
 
-def demo_multiple_games(checkpoint_num):
-    algorithm = load_checkpoint(checkpoint_num)
-    play_multiple_games(algorithm, num_games = 2000, num_random_players=3)
+def demo_multiple_games():
+    algorithm = load_latest_checkpoint()
+    play_multiple_games(algorithm, num_games = 20000, num_random_players=3)

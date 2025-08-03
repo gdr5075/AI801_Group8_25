@@ -14,6 +14,7 @@ from ray.rllib.algorithms.algorithm import Algorithm
 import json
 import os
 import uno_package.playground as playground
+from datetime import datetime
 
 def main():
 
@@ -113,7 +114,7 @@ def main():
                 # Optionally, save results_log to a file for later plotting
                 dir_path = os.path.dirname(os.path.realpath(__file__))
                 #Save
-                checkpoint_path = dqn_w_custom_env.save_to_path(f"file://{dir_path}/checkpoints/checkpoint_{i+1}")
+                checkpoint_path = dqn_w_custom_env.save_to_path(f"file://{dir_path}/checkpoints/checkpoint_{datetime.now().timestamp()}")
                 print("checkpoint saved at", checkpoint_path)
 
             with open(f'{dir_path}/checkpoints/checkpoint_{i+1}/training_results_{i+1}.json', "w") as f:

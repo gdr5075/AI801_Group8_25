@@ -27,7 +27,7 @@ class ActionMaskDQNTorchRLModule(TorchRLModule, DefaultDQNRLModule):
     framework: str = "torch"
 
     def __init__(self, *args, **kwargs):
-        print('Initializing DefaultDQNTorchRLModule')
+        #print('Initializing DefaultDQNTorchRLModule')
         catalog_class = kwargs.pop("catalog_class", None)
         if catalog_class is None:
             catalog_class = DQNCatalog
