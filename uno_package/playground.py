@@ -181,6 +181,10 @@ def demo_single_game(checkpoint_num):
     algorithm = load_checkpoint(checkpoint_num)
     play_single_game(algorithm, num_random_players=3, verbose=True)
 
-def demo_multiple_games():
-    algorithm = load_latest_checkpoint()
-    play_multiple_games(algorithm, num_games = 20000, num_random_players=3)
+def demo_multiple_games(checkpoint_num):
+    algorithm = load_checkpoint(checkpoint_num)
+    play_multiple_games(algorithm, num_games = 2000, num_random_players=3)
+
+def demo_multiple_games_latest_checkpoint():
+    algorithm = demo_multiple_games_latest_checkpoint()
+    play_multiple_games(algorithm, num_games = 2000, num_random_players=3)
