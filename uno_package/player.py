@@ -39,6 +39,22 @@ class Player:
 
         return action
     
+    def get_action_sa(self, observation, env):
+        print(f"Player {self.name} is currently playing")
+        moves = utils.state_rep_to_action_numbers_list(utils.hand_to_state_rep(env.get_valid_moves_for_player(self)))
+        print(self.hand)
+        print(f'Has moves {moves}')
+        if len(moves) == 0:
+            print('Player chooses move DRAW')
+            return utils.card_rep_to_action_number('DRAW')
+        action = random.choice(moves)
+        (cardToPlay, chosenColor) = utils.action_to_card_rep(action)
+        ctpColor = cardToPlay.split(' | ')[0]
+        print(f"player {self.name} playing {cardToPlay}")
+        if(ctpColor == card.COLOR.WILD.value):
+            print(f"Wild card played, {self.name} chose {utils.colorize_text_by_color_name(chosenColor, chosenColor)} as the next color")
+        return action
+    
     def clear_hand(self):
         self.hand = []
     

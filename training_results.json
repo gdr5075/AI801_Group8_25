@@ -1,0 +1,32 @@
+[
+  {
+    "iteration": 1,
+    "episode_return_mean": 1.0840000000000003,
+    "episode_len_mean": 16.0,
+    "timesteps_total": 1000.0
+  },
+  {
+    "iteration": 2,
+    "episode_return_mean": 1.757,
+    "episode_len_mean": 16.06,
+    "timesteps_total": 1000.0
+  },
+  {
+    "iteration": 3,
+    "episode_return_mean": -1.0894000000000006,
+    "episode_len_mean": 19.85,
+    "timesteps_total": 1000.0
+  },
+  {
+    "iteration": 4,
+    "episode_return_mean": 0.7614000000000002,
+    "episode_len_mean": 21.09,
+    "timesteps_total": 1000.0
+  },
+  {
+    "iteration": 5,
+    "episode_return_mean": -1.4110000000000003,
+    "episode_len_mean": 17.67,
+    "timesteps_total": 1000.0
+  }
+]
