@@ -1,3 +1,6 @@
 groupProject
 */__pycache__/*
 *.pyc
+checkpoints
+~
+

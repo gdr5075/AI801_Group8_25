@@ -12,6 +12,8 @@ from ray.tune.schedulers import PopulationBasedTraining
 import pprint
 from ray.rllib.algorithms.algorithm import Algorithm
 import json
+import os
+
 def main():
 
     #tf.debugging.experimental.enable_dump_debug_info("~/ray_results", tensor_debug_mode="FULL_HEALTH", circular_buffer_size=-1)
@@ -19,7 +21,7 @@ def main():
     players = {id: player.Player(id) for id in agentIds}
 
     doLoopTest = False
-    doTune = True
+    doTune = False
 
     ## feel free to change
     reward_values = {
@@ -102,9 +104,11 @@ def main():
                     "num_env_steps_sampled": result["env_runners"]["num_env_steps_sampled"],
                 })
             # Optionally, save results_log to a file for later plotting
-            with open("training_results.json", "w") as f:
+            dir_path = os.path.dirname(os.path.realpath(__file__))
+            #Save
+            checkpoint_path = dqn_w_custom_env.save_to_path(f"file://{dir_path}/checkpoints/checkpoint_{i+1}")
+            with open(f'{dir_path}/checkpoints/checkpoint_{i+1}/training_results_{i+1}.json', "w") as f:
                 json.dump(results_log, f, indent=2)
-            checkpoint_path = dqn_w_custom_env.save_to_path("./checkpoints/")
             print("checkpoint saved at", checkpoint_path)
         else:
             print(torch.cuda.is_available())
