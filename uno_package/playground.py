@@ -4,6 +4,7 @@ import random
 import numpy as np
 from ray.rllib.algorithms.algorithm import Algorithm
 from uno_package import player, RLLibEnvSingleAgent, utils, PlaygroundEnv
+from pathlib import Path
 
 def load_checkpoint(checkpoint_number=5):
     dir_path = os.path.dirname(os.path.realpath(__file__))+"/../"
@@ -20,7 +21,6 @@ def load_checkpoint(checkpoint_number=5):
 def load_latest_checkpoint():
     dir_path = os.path.dirname(os.path.realpath(__file__))+"/../checkpoints/"
     checkpoint_path = get_latest_created_folder(dir_path)
-
     try:
         saved_algorithm = Algorithm.from_checkpoint(path=checkpoint_path)
         print(f"Successfully loaded checkpoint from {checkpoint_path}")
@@ -186,5 +186,5 @@ def demo_multiple_games(checkpoint_num):
     play_multiple_games(algorithm, num_games = 2000, num_random_players=3)
 
 def demo_multiple_games_latest_checkpoint():
-    algorithm = demo_multiple_games_latest_checkpoint()
-    play_multiple_games(algorithm, num_games = 2000, num_random_players=3)
+    algorithm = load_latest_checkpoint()
+    # play_multiple_games(algorithm, num_games = 2000, num_random_players=3)

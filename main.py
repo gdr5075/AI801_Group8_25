@@ -1,4 +1,4 @@
-from uno_package import player, game, env, utils,deck, loop, card, DQNActionMaskModel, RLLibEnv, RLLibEnvSingleAgent
+from uno_package import player, game, env, utils,deck, loop, card, DQNActionMaskModel, RLLibEnv, RLLibEnvSingleAgent, training
 import torch
 import random
 from ray.rllib.algorithms.dqn import DQNConfig
@@ -22,9 +22,10 @@ def main():
     agentIds = ['UnoAgent_0', 'UnoAgent_1', 'UnoAgent_2', 'UnoAgent_3']
     players = {id: player.Player(id) for id in agentIds}
 
-    doEvaluate = True
+    doEvaluate = False
     doLoopTest = False
     doTune = False
+    continueTraining = True
 
     ## feel free to change
     reward_values = {
@@ -53,7 +54,13 @@ def main():
 
     elif doEvaluate:
 
-        playground.demo_multiple_games(3)
+        playground.demo_multiple_games_latest_checkpoint()
+    
+    elif continueTraining:
+        dir_path = os.path.dirname(os.path.realpath(__file__))+"/checkpoints/"
+        checkpoint_path = playground.get_latest_created_folder(dir_path)
+        new_dqn = Algorithm.from_checkpoint(checkpoint_path)
+        training.train_multiple_iterations(new_dqn, 5)
 
     else:
         if not doTune:
@@ -93,32 +100,7 @@ def main():
                 )
             )
             dqn_w_custom_env = config.build_algo()
-            # result = dqn_w_custom_env.train()
-            # print("Training result:", result)
-            results_log = []
-            for i in range(5):
-                result = dqn_w_custom_env.train()
-                # Log key metrics
-                print(f"Iteration {i+1}")
-                print("Episode reward mean:", result["env_runners"]["episode_return_mean"])
-                print("Episode length mean:", result["env_runners"]["episode_len_mean"])
-                print("num_env_steps_sampled:", result["env_runners"]["num_env_steps_sampled"])
-                print("---")
-                # Save results for later analysis
-                results_log.append({
-                    "iteration": i+1,
-                    "episode_return_mean": result["env_runners"]["episode_return_mean"],
-                    "episode_len_mean": result["env_runners"]["episode_len_mean"],
-                    "num_env_steps_sampled": result["env_runners"]["num_env_steps_sampled"],
-                })
-                # Optionally, save results_log to a file for later plotting
-                dir_path = os.path.dirname(os.path.realpath(__file__))
-                #Save
-                checkpoint_path = dqn_w_custom_env.save_to_path(f"file://{dir_path}/checkpoints/checkpoint_{datetime.now().timestamp()}")
-                print("checkpoint saved at", checkpoint_path)
-
-            with open(f'{dir_path}/checkpoints/checkpoint_{i+1}/training_results_{i+1}.json', "w") as f:
-                json.dump(results_log, f, indent=2)
+            training.train_multiple_iterations(dqn_w_custom_env, 5)
         else:
             print(torch.cuda.is_available())
             
