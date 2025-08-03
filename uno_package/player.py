@@ -7,52 +7,52 @@ class Player:
         self.hand = []
 
     def play(self, game):
-        print(f"Player {self.name} is currently playing")
+        #print(f"Player {self.name} is currently playing")
         
         #self.show_hand()
         moves = game.get_valid_moves(self)
-        print(f'Has moves {moves}')
+        #print(f'Has moves {moves}')
 
         idx = random.choice(moves)
         cardToPlay = self.hand.pop(idx)
-        print(f"player {self.name} playing {cardToPlay}")
+        #print(f"player {self.name} playing {cardToPlay}")
         game.play_card(cardToPlay)
         if(cardToPlay.color == card.COLOR.WILD):
             color = random.choice(utils.normal_color_list)
             game.choose_wild_color(color)
-            print(f"Wild card played, {self.name} chose {utils.colorize_text_by_color_name(color, color)} as the next color")
+            #print(f"Wild card played, {self.name} chose {utils.colorize_text_by_color_name(color, color)} as the next color")
 
     def get_action(self, observation):
-        print(f"Player {self.name} is currently playing")
+        #print(f"Player {self.name} is currently playing")
         moves = utils.state_rep_to_action_numbers_list(observation)
-        print(self.hand)
-        print(f'Has moves {moves}')
+        #print(self.hand)
+        #print(f'Has moves {moves}')
         if len(moves) == 0:
-            print('Player chooses move DRAW')
+            #print('Player chooses move DRAW')
             return utils.card_rep_to_action_number('DRAW')
         action = random.choice(moves)
         (cardToPlay, chosenColor) = utils.action_to_card_rep(action)
         ctpColor = cardToPlay.split(' | ')[0]
-        print(f"player {self.name} playing {cardToPlay}")
-        if(ctpColor == card.COLOR.WILD.value):
-            print(f"Wild card played, {self.name} chose {utils.colorize_text_by_color_name(chosenColor, chosenColor)} as the next color")
+        #print(f"player {self.name} playing {cardToPlay}")
+        #if(ctpColor == card.COLOR.WILD.value):
+            #print(f"Wild card played, {self.name} chose {utils.colorize_text_by_color_name(chosenColor, chosenColor)} as the next color")
 
         return action
     
     def get_action_sa(self, observation, env):
-        print(f"Player {self.name} is currently playing")
+        #print(f"Player {self.name} is currently playing")
         moves = utils.state_rep_to_action_numbers_list(utils.hand_to_state_rep(env.get_valid_moves_for_player(self)))
-        print(self.hand)
-        print(f'Has moves {moves}')
+        #print(self.hand)
+        #print(f'Has moves {moves}')
         if len(moves) == 0:
-            print('Player chooses move DRAW')
+            #print('Player chooses move DRAW')
             return utils.card_rep_to_action_number('DRAW')
         action = random.choice(moves)
         (cardToPlay, chosenColor) = utils.action_to_card_rep(action)
         ctpColor = cardToPlay.split(' | ')[0]
-        print(f"player {self.name} playing {cardToPlay}")
-        if(ctpColor == card.COLOR.WILD.value):
-            print(f"Wild card played, {self.name} chose {utils.colorize_text_by_color_name(chosenColor, chosenColor)} as the next color")
+        #print(f"player {self.name} playing {cardToPlay}")
+        #if(ctpColor == card.COLOR.WILD.value):
+            #print(f"Wild card played, {self.name} chose {utils.colorize_text_by_color_name(chosenColor, chosenColor)} as the next color")
         return action
     
     def clear_hand(self):
@@ -62,8 +62,9 @@ class Player:
         self.hand += cards
 
     def show_hand(self):
-        print(f"{self.name}'s current hand:")
-        print(f'{self.hand}')
+        pass
+        #print(f"{self.name}'s current hand:")
+        #print(f'{self.hand}')
 
     def draw_card(self):
         pass
@@ -75,11 +76,11 @@ class Player:
         pass
 
     def get_card(self, card_rep):
-        print(f'Getting card {card_rep} from hand')
+        #print(f'Getting card {card_rep} from hand')
         for i in range(len(self.hand)):
-            print(f'Checking {self.hand[i]}')
+            #print(f'Checking {self.hand[i]}')
             if self.hand[i].__repr__() == card_rep:
-                print(f'Found card {self.hand[i]} at index {i}')
+                #print(f'Found card {self.hand[i]} at index {i}')
                 return self.hand.pop(i)
         return None
 
@@ -95,22 +96,22 @@ class HumanPlayer(Player):
 
     def play(self, game):
 
-        ##just printing info for player
-        print(f'{utils.TextCode.RED.value}----------Your turn {self.name}----------{utils.TextCode.RESET.value}')
+        ##just #printing info for player
+        #print(f'{utils.TextCode.RED.value}----------Your turn {self.name}----------{utils.TextCode.RESET.value}')
         
-        print(f'Current top card is {utils.colorize_text_based_on_card_color(game.get_top_play_card(), game.get_top_play_card())}')
-        if(game.get_top_play_card().color == card.COLOR.WILD):
-           print(f'Chosen color is {utils.colorize_text_by_color_name(game.get_chosen_wild_color(), game.get_chosen_wild_color())}')
+        #print(f'Current top card is {utils.colorize_text_based_on_card_color(game.get_top_play_card(), game.get_top_play_card())}')
+        #if(game.get_top_play_card().color == card.COLOR.WILD):
+           #print(f'Chosen color is {utils.colorize_text_by_color_name(game.get_chosen_wild_color(), game.get_chosen_wild_color())}')
 
-        print(f'Turn direction: {game.get_turn_direction()}')
-        print(f'Turn Order: {game.get_turn_order()}')
-        print(f'Hand Counts {game.get_hand_counts()}')
+        #print(f'Turn direction: {game.get_turn_direction()}')
+        #print(f'Turn Order: {game.get_turn_order()}')
+        #print(f'Hand Counts {game.get_hand_counts()}')
         
         ## tell player current hand
         handStr = ''
         for i in range(len(self.hand)):
             handStr += f"{str(i)}: {utils.colorize_text_based_on_card_color(f'{self.hand[i].__repr__()}', self.hand[i])} "
-        print(f'Current hand: {handStr}')
+        #print(f'Current hand: {handStr}')
 
 
         moves = game.get_valid_moves(self)
@@ -121,12 +122,12 @@ class HumanPlayer(Player):
             for move in moves:
                 moveStrAppend += f" {move}: {utils.colorize_text_based_on_card_color(f'{self.hand[move].__repr__()}', self.hand[move])}"
 
-            print(f'{moveStr + moveStrAppend}')
+            #print(f'{moveStr + moveStrAppend}')
             ##make sure input is integer and a valid move
             cardToPlay = None
             try:
                 choice = int(input("Select number from valid choices above: "))
-                print(f"You chose to play {utils.colorize_text_based_on_card_color(f'{self.hand[choice].__repr__()}', self.hand[choice])}")
+                #print(f"You chose to play {utils.colorize_text_based_on_card_color(f'{self.hand[choice].__repr__()}', self.hand[choice])}")
                 if(not choice in moves):
                     raise ValueError()
                 cardToPlay = self.hand.pop(choice)
@@ -140,32 +141,32 @@ class HumanPlayer(Player):
                     colorChoiceStr = ''
                     for i in range(len(utils.normal_color_list)):
                         colorChoiceStr += f" {i}: {utils.colorize_text_by_color_name(utils.normal_color_list[i], utils.normal_color_list[i])}"
-                    print(colorChoiceStr)
+                    #print(colorChoiceStr)
                     choice = int(input("Select number from valid choices above to choose color: "))
                     game.choose_wild_color(utils.normal_color_list[choice])
-                    print(f'You chose the color {utils.colorize_text_by_color_name(utils.normal_color_list[choice], utils.normal_color_list[choice])}')
+                    #print(f'You chose the color {utils.colorize_text_by_color_name(utils.normal_color_list[choice], utils.normal_color_list[choice])}')
                 except ValueError:
                     print("Please enter a valid number for the color")
             break
 
     def get_action(self, observation):
 
-        ##just printing info for player
-        print(f'{utils.TextCode.RED.value}----------Your turn {self.name}----------{utils.TextCode.RESET.value}')
+        ##just #printing info for player
+        #print(f'{utils.TextCode.RED.value}----------Your turn {self.name}----------{utils.TextCode.RESET.value}')
         
-        print(f'Current top card is {utils.colorize_text_based_on_card_color(game.get_top_play_card(), game.get_top_play_card())}')
-        if(game.get_top_play_card().color == card.COLOR.WILD):
-           print(f'Chosen color is {utils.colorize_text_by_color_name(game.get_chosen_wild_color(), game.get_chosen_wild_color())}')
+        #print(f'Current top card is {utils.colorize_text_based_on_card_color(game.get_top_play_card(), game.get_top_play_card())}')
+        #if(game.get_top_play_card().color == card.COLOR.WILD):
+           #print(f'Chosen color is {utils.colorize_text_by_color_name(game.get_chosen_wild_color(), game.get_chosen_wild_color())}')
 
-        print(f'Turn direction: {game.get_turn_direction()}')
-        print(f'Turn Order: {game.get_turn_order()}')
-        print(f'Hand Counts {game.get_hand_counts()}')
+        #print(f'Turn direction: {game.get_turn_direction()}')
+        #print(f'Turn Order: {game.get_turn_order()}')
+        #print(f'Hand Counts {game.get_hand_counts()}')
         
         ## tell player current hand
         handStr = ''
         for i in range(len(self.hand)):
             handStr += f"{str(i)}: {utils.colorize_text_based_on_card_color(f'{self.hand[i].__repr__()}', self.hand[i])} "
-        print(f'Current hand: {handStr}')
+        #print(f'Current hand: {handStr}')
 
 
         moves = game.get_valid_moves(self)
@@ -176,12 +177,12 @@ class HumanPlayer(Player):
             for move in moves:
                 moveStrAppend += f" {move}: {utils.colorize_text_based_on_card_color(f'{self.hand[move].__repr__()}', self.hand[move])}"
 
-            print(f'{moveStr + moveStrAppend}')
+            #print(f'{moveStr + moveStrAppend}')
             ##make sure input is integer and a valid move
             cardToPlay = None
             try:
                 choice = int(input("Select number from valid choices above: "))
-                print(f"You chose to play {utils.colorize_text_based_on_card_color(f'{self.hand[choice].__repr__()}', self.hand[choice])}")
+                #print(f"You chose to play {utils.colorize_text_based_on_card_color(f'{self.hand[choice].__repr__()}', self.hand[choice])}")
                 if(not choice in moves):
                     raise ValueError()
                 cardToPlay = self.hand.pop(choice)
@@ -195,10 +196,10 @@ class HumanPlayer(Player):
                     colorChoiceStr = ''
                     for i in range(len(utils.normal_color_list)):
                         colorChoiceStr += f" {i}: {utils.colorize_text_by_color_name(utils.normal_color_list[i], utils.normal_color_list[i])}"
-                    print(colorChoiceStr)
+                    #print(colorChoiceStr)
                     choice = int(input("Select number from valid choices above to choose color: "))
                     game.choose_wild_color(utils.normal_color_list[choice])
-                    print(f'You chose the color {utils.colorize_text_by_color_name(utils.normal_color_list[choice], utils.normal_color_list[choice])}')
+                    #print(f'You chose the color {utils.colorize_text_by_color_name(utils.normal_color_list[choice], utils.normal_color_list[choice])}')
                 except ValueError:
                     print("Please enter a valid number for the color")
             break

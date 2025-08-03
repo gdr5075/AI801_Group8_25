@@ -51,7 +51,7 @@ def main():
 
     elif doEvaluate:
 
-        playground.demo_multipl_games()
+        playground.demo_multiple_games()
 
     else:
         if not doTune:

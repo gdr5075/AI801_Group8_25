@@ -152,7 +152,7 @@ def play_multiple_games(algorithm, num_games=10, num_random_players=3):
     print(f"Random player wins: {results['random_player_wins']}")
     print(f"Win rate: {results['trained_win_rate']}")
     print(f"Average turns per game: {results['average_turns']:.1f}")
-    print(f"{'='*50}")
+    print(f"{'='*30}")
     
     return results
 
@@ -161,6 +161,6 @@ def demo_single_game():
     algorithm = load_checkpoint(5)
     play_single_game(algorithm, num_random_players=3, verbose=True)
 
-def demo_multipl_games():
+def demo_multiple_games():
     algorithm = load_checkpoint(5)
-    play_multiple_games(algorithm, num_games = 20000, num_random_players=3)
+    play_multiple_games(algorithm, num_games = 2000, num_random_players=3)

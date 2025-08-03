@@ -51,7 +51,7 @@ class ActionMaskDQNTorchRLModule(TorchRLModule, DefaultDQNRLModule):
         # print(batch['obs'][0][60:75])
         # print('action mask')
         # print(batch['obs'][0][75:137])
-        print('_forward_inference')
+        #print('_forward_inference')
         for i in range(len(batch['obs'][0][75:137])):
             if batch['obs'][0][75+i] == 0:
                 qf_outs[QF_PREDS][0][i] = float('-inf')

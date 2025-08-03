@@ -34,10 +34,10 @@ class Game:
         #self.print_status()
 
     def play(self):
-        print(f'beginning top card {self.get_top_play_card()}')
+        #print(f'beginning top card {self.get_top_play_card()}')
         while self.is_game_over() == False and self.turn_count < 2000:
             self.turn_count+=1
-            print(f"Turn {self.turn_count}")
+            #print(f"Turn {self.turn_count}")
             next_player = self.get_next_player()
             card_played = self.execute_player_turn(next_player)
             if card_played:
@@ -58,9 +58,9 @@ class Game:
         #1 - Check play options
         moves = self.get_valid_moves(player)
         if(len(moves) == 0):
-            print(f"{player.name} has no valid moves and has to draw: {player.get_hand()}")
+            #print(f"{player.name} has no valid moves and has to draw: {player.get_hand()}")
             self.draw_card(player)
-            print(f" {player.name} drew so now their hand is: {player.get_hand()}")
+            #print(f" {player.name} drew so now their hand is: {player.get_hand()}")
             moves = self.get_valid_moves(player) #Refresh moves
 
         #If player has options, let them move
@@ -83,18 +83,18 @@ class Game:
         if(self.nextPlayerAction != None):
             match (self.nextPlayerAction):
                 case card.VALUE.SKIP:
-                    print(f"Skipping {self.players[self.currentPlayer]}")
+                    #print(f"Skipping {self.players[self.currentPlayer]}")
                     self.currentPlayer += direction
                     self.nextPlayerAction = None
 
                 case card.VALUE.DRAW2:
-                    print(f"{self.players[self.currentPlayer]} drawing 2 cards")
+                    #print(f"{self.players[self.currentPlayer]} drawing 2 cards")
                     self.draw_cards(self.players[self.currentPlayer], 2)
                     self.currentPlayer += direction
                     self.nextPlayerAction = None
 
                 case card.VALUE.DRAW4:
-                    print(f"{self.players[self.currentPlayer]} drawing 4 cards")
+                    #print(f"{self.players[self.currentPlayer]} drawing 4 cards")
                     self.draw_cards(self.players[self.currentPlayer], 4)
                     self.currentPlayer += direction
                     self.nextPlayerAction = None
@@ -148,10 +148,10 @@ class Game:
             self.playPile.append(c)
             self.deck.shuffle()
     
-    def print_status(self):
-        print(self.deck.size())
-        print(self.playPile.__len__())
-        print(self.playPile[self.playPile.__len__() - 1])
+    # def print_status(self):
+    #     print(self.deck.size())
+    #     print(self.playPile.__len__())
+    #     print(self.playPile[self.playPile.__len__() - 1])
 
     def deal_cards(self, player, number):
         cards = []

@@ -39,7 +39,7 @@ class UnoAgentSelector(AgentSelector):
 class UnoRLLibEnv(gym.Env):
 
     def __init__(self, config=None):
-        print('Initializing UnoRLLibEnv')
+        #print('Initializing UnoRLLibEnv')
         #players is a dict of player objects with the key being the player name
         self.players = config.get("players", None)
         self.hasHuman = config.get("hasHuman", False)
@@ -53,7 +53,7 @@ class UnoRLLibEnv(gym.Env):
 
         #agents are just the player names
         self.agents = names
-        print(f'Agents: {self.agents}')
+        #print(f'Agents: {self.agents}')
         
         # """
         # Our AgentSelector utility allows easy cyclic stepping through the agents list.
@@ -86,7 +86,7 @@ class UnoRLLibEnv(gym.Env):
         can be called without issues.
         Here it sets up the state dictionary which is used by step() and the observations dictionary which is used by step() and observe()
         """
-        print('Resetting UnoRLLibEnv')
+        ##print('Resetting UnoRLLibEnv')
         super().reset(seed=seed, options=options)
 
         self.deck = deck.UnoMainDeck()
@@ -127,19 +127,19 @@ class UnoRLLibEnv(gym.Env):
 
 
     def step(self, action):
-        print(f'turn count: {self.turn_count}')
-        print(f'Step called with action_dict: {action}')
-        print(f'Top card: {self.get_top_play_card()}')
-        print(f'Agent has number of cards: {len(self.players[self.trainingAgent].hand)}')
-        print(f'Action: {action}')
+        #print(f'turn count: {self.turn_count}')
+        #print(f'Step called with action_dict: {action}')
+        #print(f'Top card: {self.get_top_play_card()}')
+        #print(f'Agent has number of cards: {len(self.players[self.trainingAgent].hand)}')
+        #print(f'Action: {action}')
 
         direction = 1 if self.isClockwise else -1
 
-        print(f'Current direction: {direction}')
+        #print(f'Current direction: {direction}')
 
         # gets a tuple of card representation and wild color
         playedCardRepr = utils.action_to_card_rep(action)
-        print(f'Played card representation: {playedCardRepr}')
+        #print(f'Played card representation: {playedCardRepr}')
 
         # if the agent's action is draw, this will be true if they draw a playable card
         agentDrewPlayableCard = False
@@ -147,19 +147,19 @@ class UnoRLLibEnv(gym.Env):
         ## player is drawing
         if not playedCardRepr:
             self.draw_card(self.trainingAgent)
-            print(f'{self.trainingAgent} drew a card')
+            #print(f'{self.trainingAgent} drew a card')
             ## if player drew card to play, set the boolean to true so it won't skip to the next player for the next step
             if len(self.get_valid_moves_for_player(self.players[self.trainingAgent])) != 0:
-                print(f'{self.trainingAgent} drew a playable card')
+                #print(f'{self.trainingAgent} drew a playable card')
                 agentDrewPlayableCard = True
         else:
-            print(self.players[self.trainingAgent].get_hand())
+            #print(self.players[self.trainingAgent].get_hand())
             playedCard = self.players[self.trainingAgent].get_card(playedCardRepr[0])
-            print(f'Played card: {playedCard.color} {playedCard.value}')
+            #print(f'Played card: {playedCard.color} {playedCard.value}')
             self.play_card(playedCard)
             ## set wild color if wild played
             self.wildColor = playedCardRepr[1] if not None else None
-            print(f'Wild color: {self.wildColor}')
+            #print(f'Wild color: {self.wildColor}')
             # check if card does something to next player
             self.handle_rewards(playedCard, direction)
             self.check_auto_action(direction, playedCard)
@@ -180,7 +180,7 @@ class UnoRLLibEnv(gym.Env):
             
             # gets a tuple of card representation and wild color
             playedCardRepr = utils.action_to_card_rep(_action)
-            print(f'Played card representation: {playedCardRepr}')
+            #print(f'Played card representation: {playedCardRepr}')
 
             # if the agent's action is draw, this will be true if they draw a playable card
             agentDrewPlayableCard = False
@@ -188,19 +188,19 @@ class UnoRLLibEnv(gym.Env):
             ## player is drawing
             if not playedCardRepr:
                 self.draw_card(self.current_player)
-                print(f'{self.current_player} drew a card')
+                #print(f'{self.current_player} drew a card')
                 ## if player drew card to play, set the boolean to true so it won't skip to the next player for the next step
                 if len(self.get_valid_moves_for_player(self.players[self.current_player])) != 0:
-                    print(f'{self.current_player} drew a playable card')
+                    #print(f'{self.current_player} drew a playable card')
                     agentDrewPlayableCard = True
             else:
-                print(self.players[self.current_player].get_hand())
+                #print(self.players[self.current_player].get_hand())
                 playedCard = self.players[self.current_player].get_card(playedCardRepr[0])
-                print(f'Played card: {playedCard.color} {playedCard.value}')
+                #print(f'Played card: {playedCard.color} {playedCard.value}')
                 self.play_card(playedCard)
                 ## set wild color if wild played
                 self.wildColor = playedCardRepr[1] if not None else None
-                print(f'Wild color: {self.wildColor}')
+                #print(f'Wild color: {self.wildColor}')
                 # check if card does something to next player
                 self.check_auto_action(direction, playedCard)
 
@@ -225,7 +225,7 @@ class UnoRLLibEnv(gym.Env):
         Returns:
             dict: Observation with agents' hands, played cards, top_card, clockwise
         """
-        print(f'Observing agent: {agent}')
+        #print(f'Observing agent: {agent}')
         obsSpace = {}
   
         obsSpace[agent] = utils.hand_to_state_rep(self.players[agent].hand)
@@ -253,27 +253,27 @@ class UnoRLLibEnv(gym.Env):
                 if(nextAgent.card_count() == 1):
                     reward = self.reward_values['reverse_from_uno']
                     self.reward += reward
-                    print(f"{self.current_player} gets reward {reward} for reversing away from {nextAgent.name} with 1 card")
+                    #print(f"{self.current_player} gets reward {reward} for reversing away from {nextAgent.name} with 1 card")
                 return
             case card.VALUE.SKIP:
                 if(nextAgent.card_count() == 1):
                     reward = self.reward_values['skip_uno']
                     self.reward += reward
-                    print(f"{self.current_player} gets reward {reward} for skipping {nextAgent.name} with 1 card")
+                    #print(f"{self.current_player} gets reward {reward} for skipping {nextAgent.name} with 1 card")
                 return
 
             case card.VALUE.DRAW2:
                 if(nextAgent.card_count() == 1):
                     reward = self.reward_values['draw2_uno']
                     self.reward += reward
-                    print(f"{self.current_player} gets reward {reward} for making {nextAgent.name} draw 2 with 1 card")
+                    #print(f"{self.current_player} gets reward {reward} for making {nextAgent.name} draw 2 with 1 card")
                 return
 
             case card.VALUE.DRAW4:
                 if(nextAgent.card_count() == 1):
                     reward = self.reward_values['draw4_uno']
                     self.reward += reward
-                    print(f"{self.current_player} gets reward {reward} for making {nextAgent.name} draw 4 with 1 card")
+                    #print(f"{self.current_player} gets reward {reward} for making {nextAgent.name} draw 4 with 1 card")
                 return
         
         self.reward += self.reward_values['turn']
@@ -288,23 +288,23 @@ class UnoRLLibEnv(gym.Env):
         match (playedCard.value):
             case card.VALUE.REVERSE:
                 self.isClockwise = not self.isClockwise
-                print(f"Reversing turn order")
+                #print(f"Reversing turn order")
                 return
             case card.VALUE.SKIP:
                 self._agent_selector.next(direction)
-                print(f"Skipping {self._agent_selector.selected_agent}")
+                #print(f"Skipping {self._agent_selector.selected_agent}")
                 return
 
             case card.VALUE.DRAW2:
                 self._agent_selector.next(direction)
                 self.draw_cards(self._agent_selector.selected_agent, 2)
-                print(f"{self._agent_selector.selected_agent} drawing 2 cards")
+                #print(f"{self._agent_selector.selected_agent} drawing 2 cards")
                 return
 
             case card.VALUE.DRAW4:
                 self._agent_selector.next(direction)
                 self.draw_cards(self._agent_selector.selected_agent, 4)
-                print(f"{self._agent_selector.selected_agent} drawing 4 cards")
+                #print(f"{self._agent_selector.selected_agent} drawing 4 cards")
                 return
     
     def check_win_for_player(self, player) -> bool:
