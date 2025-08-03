@@ -248,6 +248,12 @@ class UnoRLLibEnv(gym.Env):
 
         nextAgent = self.players[self._agent_selector.get_next_agent(direction)]
         
+        #Handle when the player plays a card where they pick a color
+        if(playedCard.value == card.VALUE.DRAW4 or playedCard.value == card.VALUE.NORMAL):
+            count = self.players[self.current_player].card_color_count(playedCard.color)
+            reward_val = self.reward_values['color_select']
+            self.reward += ((reward_val * count) - (1 * reward_val))
+
         match (playedCard.value):
             case card.VALUE.REVERSE:
                 if(nextAgent.card_count() == 1):

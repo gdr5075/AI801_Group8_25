@@ -87,6 +87,14 @@ class Player:
     def card_count(self):
         return self.hand.__len__()
 
+
+    def card_color_count(self, color):
+        count = 0
+        for card in self.hand:
+            if card.color == color:
+                count += 1
+        return count
+
     def get_hand(self):
         return self.hand
     

@@ -131,6 +131,9 @@ def play_multiple_games(algorithm, num_games=10, num_random_players=3):
     
     for game_num in range(num_games):
         
+        if (game_num % 100 == 0):
+            print(f"Executing game number {game_num}")
+
         game_stats = play_single_game(algorithm, num_random_players, False)
         results['game_results'].append(game_stats)
         
@@ -157,10 +160,10 @@ def play_multiple_games(algorithm, num_games=10, num_random_players=3):
     return results
 
 
-def demo_single_game():
-    algorithm = load_checkpoint(5)
+def demo_single_game(checkpoint_num):
+    algorithm = load_checkpoint(checkpoint_num)
     play_single_game(algorithm, num_random_players=3, verbose=True)
 
-def demo_multiple_games():
-    algorithm = load_checkpoint(5)
+def demo_multiple_games(checkpoint_num):
+    algorithm = load_checkpoint(checkpoint_num)
     play_multiple_games(algorithm, num_games = 2000, num_random_players=3)

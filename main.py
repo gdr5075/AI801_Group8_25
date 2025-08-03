@@ -31,6 +31,7 @@ def main():
         'draw4_uno': 2,
         'skip_uno': 2,
         'reverse_from_uno': 2,
+        'color_select' : 1,
         'turn': -0.1,
         'win': 10.0,
         'lose': -5,
@@ -51,7 +52,7 @@ def main():
 
     elif doEvaluate:
 
-        playground.demo_multiple_games()
+        playground.demo_multiple_games(3)
 
     else:
         if not doTune:
