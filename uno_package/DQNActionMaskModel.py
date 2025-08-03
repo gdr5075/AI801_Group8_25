@@ -93,7 +93,7 @@ class ActionMaskDQNTorchRLModule(TorchRLModule, DefaultDQNRLModule):
         # print(batch['obs'][0][60:75])
         # print('action mask')
         # print(batch['obs'][0][75:137])
-        print('_forward_exploration')
+        # print('_forward_exploration')
         for i in range(len(batch['obs'][0][75:137])):
             if batch['obs'][0][75+i] == 0:
                 qf_outs[QF_PREDS][0][i] = float('-inf')
@@ -205,7 +205,7 @@ class ActionMaskDQNTorchRLModule(TorchRLModule, DefaultDQNRLModule):
         # print(batch['obs'][0][60:75])
         # print('action mask')
         # print(batch['obs'][0][75:137])
-        print('_forward_train')
+        #print('_forward_train')
         for i in range(len(batch['obs'][0][75:137])):
             if batch['obs'][0][75+i] == 0:
                 qf_outs[QF_PREDS][0][i] = float('-inf')
@@ -216,12 +216,12 @@ class ActionMaskDQNTorchRLModule(TorchRLModule, DefaultDQNRLModule):
             )
         else:
             output[QF_PREDS] = qf_outs[QF_PREDS]
-        print('_forward_train2')
+        #print('_forward_train2')
         # The target Q-values for the next observations.
         qf_target_next_outs = self.forward_target(batch_target)
-        print('_forward_train3')
+        #print('_forward_train3')
         output[QF_TARGET_NEXT_PREDS] = qf_target_next_outs[QF_PREDS]
-        print('_forward_train4')
+        #print('_forward_train4')
         # We are learning a Q-value distribution.
         if self.num_atoms > 1:
             # Add distribution artefacts to the output.
@@ -234,18 +234,18 @@ class ActionMaskDQNTorchRLModule(TorchRLModule, DefaultDQNRLModule):
             # Probabilities of the target Q-value distribution of the next state.
             output[QF_TARGET_NEXT_PROBS] = qf_target_next_outs[QF_PROBS]
 
-        print('_forward_train5')
+        #print('_forward_train5')
         # Add the states to the output, if the module is stateful.
         if Columns.STATE_OUT in qf_outs:
             output[Columns.STATE_OUT] = qf_outs[Columns.STATE_OUT]
 
-        print('_forward_train6')
+        #print('_forward_train6')
         # For correctness, also add the output states from the target forward pass.
         # Note, we do not backpropagate through this state.
         if Columns.STATE_OUT in qf_target_next_outs:
             output[Columns.NEXT_STATE_OUT] = qf_target_next_outs[Columns.STATE_OUT]
 
-        print('_forward_train7')
+        #print('_forward_train7')
 
         return output
     
