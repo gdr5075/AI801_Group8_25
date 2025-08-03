@@ -13,6 +13,7 @@ import pprint
 from ray.rllib.algorithms.algorithm import Algorithm
 import json
 import os
+import uno_package.playground as playground
 
 def main():
 
@@ -20,18 +21,19 @@ def main():
     agentIds = ['UnoAgent_0', 'UnoAgent_1', 'UnoAgent_2', 'UnoAgent_3']
     players = {id: player.Player(id) for id in agentIds}
 
+    doEvaluate = True
     doLoopTest = False
     doTune = False
 
     ## feel free to change
     reward_values = {
-        'draw2_uno': .5,
-        'draw4_uno': .5,
-        'skip_uno': .2,
-        'reverse_from_uno': .2,
-        'turn': -0.02,
+        'draw2_uno': 2,
+        'draw4_uno': 2,
+        'skip_uno': 2,
+        'reverse_from_uno': 2,
+        'turn': -0.1,
         'win': 10.0,
-        'lose': -1,
+        'lose': -5,
     }
 
     if doLoopTest:
@@ -46,6 +48,10 @@ def main():
         game_loop = TestLoop()
 
         game_loop.start(1, RLLib)
+
+    elif doEvaluate:
+
+        playground.demo_multipl_games()
 
     else:
         if not doTune:
