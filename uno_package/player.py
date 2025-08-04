@@ -244,7 +244,7 @@ class RuleBasedPlayer(Player):
         #Notes - In any instance where two cards of the same value but different color can be played, the card with color
         #that matches the color the player has the most of will be played
 
-        #color = self.highest_color()
+        prefered = self.highest_color()
 
         normal_cards = []
         skips = []
@@ -282,45 +282,76 @@ class RuleBasedPlayer(Player):
 
         #Rule 1
         if(card_countNext < card_countPlayer and len(plus2) > 0):
-            return plus2[0]
+            return self.pick_color(prefered, plus2)
         
         if(card_countNext < card_countPlayer and len(skips) > 0):
-            return skips[0]
+            return self.pick_color(prefered, skips)
 
         #Rule 2
         if(card_countNext < (card_countPlayer/2) and len(plus4) > 0):
-            return plus4[0]
+            return self.pick_color(prefered, plus4)
 
         
         #Rule 3
         if(card_countNext < card_countPrevious and len(reverse) > 0):
-            return reverse[0]
+            return self.pick_color(prefered, reverse)
         
         #Rule 4
         if(len(normal_cards) > 0):
-            return normal_cards[0]
+            return self.pick_color(prefered, normal_cards)
         
         #Rule 5
         if(len(skips) > 0):
-            return skips[0]
+            return self.pick_color(prefered, skips)
         if(len(plus2) > 0):
-            return plus2[0]
+            return self.pick_color(prefered, plus2)
         if(len(reverse) > 0):
-            return reverse[0]
+            return self.pick_color(prefered, reverse)
         
         #Rule 6
         if(len(wild) > 0):
-            return wild[0]
+            return self.pick_color(prefered, wild)
         if(len(plus4) > 0):
-            return plus4[0]
+            return self.pick_color(prefered, plus4)
         
         #Catch all
         return moves[0]
     
-    def pick_color(self, actions):
-        count = 0
+    def pick_color(self, highest, actions):
+        for a in actions:
+            aCard = utils.action_to_card_rep(a)
+            cColor , value = aCard[0].split(' | ')
+            if(cColor == highest.value):
+                return a
+            
+        return actions[0]
+
+
+    def highest_color(self):
+        color = card.COLOR.BLUE
+        red = 0
+        green = 0
+        blue = 0
+        yellow = 0
+        for c in self.hand:
+            match(c.color):
+                case card.COLOR.RED:
+                    red+=1
+                case card.COLOR.BLUE:
+                    blue+=1
+                case card.COLOR.GREEN:
+                    green+=1
+                case card.COLOR.YELLOW:
+                    yellow+=1
+        if green > blue:
+            color = card.COLOR.GREEN
+        if yellow > green:
+            color = card.COLOR.YELLOW
+        if red > yellow:
+            color = card.COLOR.RED
         
-        return 'RED'
+        return color
+        
 
 
 
