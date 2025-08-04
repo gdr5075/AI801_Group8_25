@@ -79,8 +79,8 @@ class Player:
 
     def card_color_count(self, color):
         count = 0
-        for card in self.hand:
-            if card.color == color:
+        for c in self.hand:
+            if c.color.value == color:
                 count += 1
         return count
 
