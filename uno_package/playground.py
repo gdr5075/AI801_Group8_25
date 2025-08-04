@@ -41,7 +41,7 @@ def play_single_game(algorithm, num_random_players=3, verbose=True):
 
     # Create players
     agentIds = ['TrainedAgent'] + [f'RandomPlayer_{i}' for i in range(num_random_players)]
-    players = {id: player.Player(id) for id in agentIds}
+    players = {id: player.RuleBasedPlayer(id) for id in agentIds}
     if verbose:
         print(f'Players are {players}')
     # Needed?
@@ -61,10 +61,10 @@ def play_single_game(algorithm, num_random_players=3, verbose=True):
         "reward_values": reward_values,
     }
     
-    # Create environment
     env = PlaygroundEnv.PlaygroundEnv(env_config)
+    env.set_randomize(True)
     obs, _ = env.reset()
-    
+
     game_stats = {
         'turns': 0,
         'winner': None,
@@ -98,8 +98,7 @@ def play_single_game(algorithm, num_random_players=3, verbose=True):
             action = output['actions'].item()  # Extract action from output
         else:
             #TODO - This portion needs to be cleaned up / reworked to support other action types
-            random_player = players[current_player]
-            action = random_player.get_action_sa(obs, env)
+            action = players[current_player].get_action_sa(obs, env)
         
         if verbose:
             card_rep = utils.action_to_card_rep(action)
@@ -178,8 +177,8 @@ def play_multiple_games(algorithm, num_games=10, num_random_players=3):
 
 
 def demo_single_game(checkpoint_num):
-    algorithm = load_checkpoint(checkpoint_num)
-    play_single_game(algorithm, num_random_players=3, verbose=True)
+    algorithm = load_latest_checkpoint()
+    play_single_game(algorithm, num_random_players=3, verbose=False)
 
 def demo_multiple_games(checkpoint_num):
     algorithm = load_checkpoint(checkpoint_num)
@@ -187,4 +186,4 @@ def demo_multiple_games(checkpoint_num):
 
 def demo_multiple_games_latest_checkpoint():
     algorithm = load_latest_checkpoint()
-    # play_multiple_games(algorithm, num_games = 2000, num_random_players=3)
+    play_multiple_games(algorithm, num_games = 2000, num_random_players=3)

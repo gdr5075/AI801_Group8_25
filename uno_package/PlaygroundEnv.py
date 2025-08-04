@@ -30,6 +30,10 @@ class UnoAgentSelector(AgentSelector):
             agentNumber += direction
         return agents
     
+    def randomize(self):
+        random.shuffle(self.agent_order)
+        return self.next(1)
+
     ## this gets the next agent in the current direction without changing the current agent
     def get_next_agent(self, direction) -> any:
         """Get the next agent."""
@@ -54,7 +58,7 @@ class PlaygroundEnv(gym.Env):
         #agents are just the player names
         self.agents = names
         #print(f'Agents: {self.agents}')
-        
+        self.randomize = False
         # """
         # Our AgentSelector utility allows easy cyclic stepping through the agents list.
         # """
@@ -89,6 +93,9 @@ class PlaygroundEnv(gym.Env):
         ##print('Resetting UnoRLLibEnv')
         super().reset(seed=seed, options=options)
 
+        for p in self.players:
+            self.players[p].set_player_count(self.get_player_count())
+
         self.deck = deck.UnoMainDeck()
         self.playPile = []
         self.winning_player = None
@@ -97,6 +104,9 @@ class PlaygroundEnv(gym.Env):
         self.wildColor = None 
 
         self.current_player = self._agent_selector.reset()
+
+        if(self.randomize):
+            self.current_player = self._agent_selector.randomize()
         
         self.reward = 0
         self.terminated = False
@@ -359,3 +369,6 @@ class PlaygroundEnv(gym.Env):
     
     def get_player(self, player):
         return self.players[player]
+    
+    def set_randomize(self, randomize):
+        self.randomize = randomize
