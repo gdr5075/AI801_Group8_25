@@ -3,6 +3,7 @@ from datetime import datetime
 import json
 
 def train_multiple_iterations(envToTrain, iterations):
+    verbose = False
     results_log = []
     for i in range(iterations):
         result = envToTrain.train()
@@ -11,7 +12,13 @@ def train_multiple_iterations(envToTrain, iterations):
         print("Episode reward mean:", result["env_runners"]["episode_return_mean"])
         print("Episode length mean:", result["env_runners"]["episode_len_mean"])
         print("num_env_steps_sampled:", result["env_runners"]["num_env_steps_sampled"])
+        print("num_episodes_lifetime", result["env_runners"]["num_episodes_lifetime"])
         print("---")
+        if verbose:
+            for r in result["env_runners"]:
+                val = result["env_runners"][r]
+                print(f"{r}: {val}")
+                print("---")
         # Save results for later analysis
         timestamp =datetime.now().timestamp()
         results_log.append({
@@ -20,6 +27,7 @@ def train_multiple_iterations(envToTrain, iterations):
             "episode_return_mean": result["env_runners"]["episode_return_mean"],
             "episode_len_mean": result["env_runners"]["episode_len_mean"],
             "num_env_steps_sampled": result["env_runners"]["num_env_steps_sampled"],
+            "num_episodes_lifetime": result["env_runners"]["num_episodes_lifetime"],
         })
         # Optionally, save results_log to a file for later plotting
         dir_path = os.path.dirname(os.path.realpath(__file__))

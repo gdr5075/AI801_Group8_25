@@ -159,6 +159,13 @@ class PlaygroundEnv(gym.Env):
             #print(self.players[self.trainingAgent].get_hand())
             playedCard = self.players[self.current_player].get_card(playedCardRepr[0])
             #print(f'Played card: {playedCard.color} {playedCard.value}')
+            if not playedCard:
+                #Let the agent try again
+                self.reward = self.reward - 1
+                #print(f"Invalid action: {action} by {self.current_player}")
+                self.draw_card(self.current_player)
+                self.current_player = self._agent_selector.next(direction)
+                return self.observe(self.current_player), self.reward, self.terminated, self.truncated, {}
             self.play_card(playedCard)
             ## set wild color if wild played
             self.wildColor = playedCardRepr[1] if not None else None

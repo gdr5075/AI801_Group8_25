@@ -20,7 +20,7 @@ def main():
 
     #tf.debugging.experimental.enable_dump_debug_info("~/ray_results", tensor_debug_mode="FULL_HEALTH", circular_buffer_size=-1)
     agentIds = ['UnoAgent_0', 'UnoAgent_1', 'UnoAgent_2', 'UnoAgent_3']
-    players = {id: player.Player(id) for id in agentIds}
+    players = {id: player.RuleBasedPlayer(id) for id in agentIds}
 
     doEvaluate = False
     doLoopTest = False
@@ -33,10 +33,12 @@ def main():
         'draw4_uno': 2,
         'skip_uno': 2,
         'reverse_from_uno': 2,
-        'color_select' : 1,
-        'turn': -0.1,
-        'win': 10.0,
+        'color_select' : 0.2,
+        'turn': 0.5, #Reward for playing a card
+        'draw_card': -0.05,
+        'win': 20.0,
         'lose': -5,
+        'invalid_action': -0.1,
     }
 
     if doLoopTest:

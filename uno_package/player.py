@@ -90,6 +90,15 @@ class Player:
     def set_player_count(self, count):
         self.player_count = count
 
+    def check_valid_action(self, action, validMoves):
+        aCard = utils.action_to_card_rep(action)
+        cColor , value = aCard[0].split(' | ')
+        for move in validMoves:
+            moveCardColor = move.color.value
+            moveCardValue = move.value.value
+            if((moveCardColor == cColor and moveCardValue == value) or moveCardValue == card.VALUE.NORMAL.value or moveCardValue == card.VALUE.DRAW4.value):
+                return True
+        return False
 class HumanPlayer(Player):
     def __init__(self, name):
         super().__init__(name)
