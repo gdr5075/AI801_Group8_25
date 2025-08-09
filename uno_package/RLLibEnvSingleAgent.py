@@ -95,7 +95,10 @@ class UnoRLLibEnv(gym.Env):
         self.turn_count = 0
         self.isClockwise = True
         self.wildColor = None 
+        self.step_count = 0
 
+        for p in self.players:
+            self.players[p].set_player_count(self.get_player_count())
         self.current_player = self._agent_selector.reset()
         
         self.reward = 0
@@ -127,6 +130,8 @@ class UnoRLLibEnv(gym.Env):
 
 
     def step(self, action):
+        self.reward = 0
+        self.step_count += 1
         #print(f'turn count: {self.turn_count}')
         #print(f'Step called with action_dict: {action}')
         #print(f'Top card: {self.get_top_play_card()}')
@@ -135,12 +140,19 @@ class UnoRLLibEnv(gym.Env):
 
         direction = 1 if self.isClockwise else -1
 
+        if self.step_count > 150:
+            self.terminated = False
+            self.truncated = True
+            return self.observe(self.trainingAgent), self.reward, self.terminated, self.truncated, {}
         #print(f'Current direction: {direction}')
 
         # gets a tuple of card representation and wild color
         playedCardRepr = utils.action_to_card_rep(action)
         #print(f'Played card representation: {playedCardRepr}')
 
+        if len(self.get_valid_moves_for_player(self.players[self.trainingAgent])) != 0 and action == 60:
+            self.reward = self.reward_values['invalid_action']
+            return self.observe(self.trainingAgent), self.reward, self.terminated, self.truncated, {}
         # if the agent's action is draw, this will be true if they draw a playable card
         agentDrewPlayableCard = False
 
@@ -152,16 +164,25 @@ class UnoRLLibEnv(gym.Env):
             if len(self.get_valid_moves_for_player(self.players[self.trainingAgent])) != 0:
                 #print(f'{self.trainingAgent} drew a playable card')
                 agentDrewPlayableCard = True
+                self.reward += self.reward_values['draw_card']
         else:
+            valid_moves = self.get_valid_moves_for_player(self.players[self.trainingAgent])
+            valid_moves_rep = [c.__repr__() for c in valid_moves]
+            if not playedCardRepr[0] in valid_moves_rep:
+                self.reward = self.reward_values['invalid_action']
+                return self.observe(self.current_player), self.reward, self.terminated, self.truncated, {}
             #print(self.players[self.trainingAgent].get_hand())
             playedCard = self.players[self.trainingAgent].get_card(playedCardRepr[0])
             #print(f'Played card: {playedCard.color} {playedCard.value}')
+            if not playedCard:
+                self.reward = self.reward_values['invalid_action']
+                return self.observe(self.trainingAgent), self.reward, self.terminated, self.truncated, {}
             self.play_card(playedCard)
             ## set wild color if wild played
-            self.wildColor = playedCardRepr[1] if not None else None
+            self.wildColor = playedCardRepr[1] if playedCardRepr[1] is not None else None
             #print(f'Wild color: {self.wildColor}')
             # check if card does something to next player
-            self.handle_rewards(playedCard, direction)
+            self.handle_rewards(playedCard, direction, self.wildColor)
             self.check_auto_action(direction, playedCard)
 
         direction = 1 if self.isClockwise else -1
@@ -199,7 +220,7 @@ class UnoRLLibEnv(gym.Env):
                 #print(f'Played card: {playedCard.color} {playedCard.value}')
                 self.play_card(playedCard)
                 ## set wild color if wild played
-                self.wildColor = playedCardRepr[1] if not None else None
+                self.wildColor = playedCardRepr[1] if playedCardRepr[1] is not None else None
                 #print(f'Wild color: {self.wildColor}')
                 # check if card does something to next player
                 self.check_auto_action(direction, playedCard)
@@ -243,16 +264,19 @@ class UnoRLLibEnv(gym.Env):
         return fullObs
 
 
-    def handle_rewards(self, playedCard, direction):
+    def handle_rewards(self, playedCard, direction, wildColor):
         """Handle rewards for the played card."""
 
+        if not playedCard:
+            return
         nextAgent = self.players[self._agent_selector.get_next_agent(direction)]
         
         #Handle when the player plays a card where they pick a color
         if(playedCard.value == card.VALUE.DRAW4 or playedCard.value == card.VALUE.NORMAL):
-            count = self.players[self.current_player].card_color_count(playedCard.color)
+            count = self.players[self.current_player].card_color_count(self.wildColor)
             reward_val = self.reward_values['color_select']
-            self.reward += ((reward_val * count) - (1 * reward_val))
+            color_reward = ((reward_val * count) - (1 * reward_val))
+            self.reward += color_reward
 
         match (playedCard.value):
             case card.VALUE.REVERSE:

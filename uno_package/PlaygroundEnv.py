@@ -156,6 +156,12 @@ class PlaygroundEnv(gym.Env):
                 #print(f'{self.trainingAgent} drew a playable card')
                 agentDrewPlayableCard = True
         else:
+            valid_moves = self.get_valid_moves_for_player(self.players[self.current_player])
+            valid_moves_rep = [c.__repr__() for c in valid_moves]
+            if not playedCardRepr[0] in valid_moves_rep:
+                self.draw_card(self.current_player)
+                self.current_player = self._agent_selector.next(direction)
+                return self.observe(self.current_player), self.reward, self.terminated, self.truncated, {}
             #print(self.players[self.trainingAgent].get_hand())
             playedCard = self.players[self.current_player].get_card(playedCardRepr[0])
             #print(f'Played card: {playedCard.color} {playedCard.value}')
