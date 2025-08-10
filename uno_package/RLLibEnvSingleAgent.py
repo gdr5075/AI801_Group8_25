@@ -37,7 +37,9 @@ class UnoAgentSelector(AgentSelector):
         return self.agent_order[agentnum - 1]
 
 class UnoRLLibEnv(gym.Env):
-
+    wins = 0
+    games = 0
+    truncates = 0
     def __init__(self, config=None):
         #print('Initializing UnoRLLibEnv')
         #players is a dict of player objects with the key being the player name
@@ -62,7 +64,8 @@ class UnoRLLibEnv(gym.Env):
         self.current_player = self._agent_selector.reset()
 
         ## last 61 are action mask
-        self.observation_space = gym.spaces.Box(low=0, high=108, shape=(136,), dtype=np.float32)
+        self.observation_space = gym.spaces.Dict({"observations": gym.spaces.Box(low=0.0, high=108.0, shape=(75,), dtype=np.float32), 
+                                                 "action_mask": gym.spaces.Box(low=0.0, high=1.0, shape=(61,), dtype=np.float32)})
         self.action_space = gym.spaces.Discrete(61)
 
         self.deck = deck.UnoMainDeck()
@@ -102,6 +105,9 @@ class UnoRLLibEnv(gym.Env):
         self.terminated = False
         self.info = {}
         self.truncated = False
+
+        for p in self.players:
+            self.players[p].set_player_count(self.get_player_count())
         
         ## deal initial hands
         for player in self.agents:
@@ -132,6 +138,19 @@ class UnoRLLibEnv(gym.Env):
         #print(f'Top card: {self.get_top_play_card()}')
         #print(f'Agent has number of cards: {len(self.players[self.trainingAgent].hand)}')
         #print(f'Action: {action}')
+        self.reward = 0
+        skip = False
+        # if self.turn_count > 500:
+        #     self.truncated = True
+        #     self.reward += self.reward_values['lose']
+        #     UnoRLLibEnv.truncates += 1
+        #     return self.observe(self.trainingAgent), self.reward, self.terminated, self.truncated, {}
+
+        # if utils.available_moves_to_action_mask(utils.hand_to_state_rep(self.get_valid_moves_for_player(self.players[self.trainingAgent])))[action] == 0:
+        #     self.reward += self.reward_values['invalid_action']
+        #     self.turn_count += 1
+        #     return self.observe(self.trainingAgent), self.reward, self.terminated, self.truncated, {}
+
 
         direction = 1 if self.isClockwise else -1
 
@@ -148,6 +167,7 @@ class UnoRLLibEnv(gym.Env):
         if not playedCardRepr:
             self.draw_card(self.trainingAgent)
             #print(f'{self.trainingAgent} drew a card')
+            self.reward += self.reward_values['draw']
             ## if player drew card to play, set the boolean to true so it won't skip to the next player for the next step
             if len(self.get_valid_moves_for_player(self.players[self.trainingAgent])) != 0:
                 #print(f'{self.trainingAgent} drew a playable card')
@@ -207,6 +227,7 @@ class UnoRLLibEnv(gym.Env):
             direction = 1 if self.isClockwise else -1
 
             if self.check_win_for_player(self.current_player):
+                self.reward = np.clip(self.reward, -1, 1)
                 return self.observe(self.trainingAgent), self.reward, self.terminated, self.truncated, {}
             
             # if the player drew a playable card, go to next step without setting next player
@@ -226,9 +247,11 @@ class UnoRLLibEnv(gym.Env):
             dict: Observation with agents' hands, played cards, top_card, clockwise
         """
         #print(f'Observing agent: {agent}')
-        obsSpace = {}
-  
-        obsSpace[agent] = utils.hand_to_state_rep(self.players[agent].hand)
+        obs = {
+            "observations": {
+            }
+        }
+        obsSpace = utils.hand_to_state_rep(self.players[agent].hand)
         rowToAdd = np.zeros((15), dtype=float)
         rowToAdd[0] = utils.card_to_action_number(self.get_top_play_card(), self.wildColor)
         rowToAdd[1] = utils.color_to_number(self.wildColor)
@@ -236,21 +259,31 @@ class UnoRLLibEnv(gym.Env):
         cardCounts = [self.players[p].card_count() for p in self._agent_selector.get_agent_list(1)]
         for i in range(len(self.agents)):
             rowToAdd[i+3] = cardCounts[i]
-        fullObs = np.vstack((obsSpace[agent], rowToAdd)).flatten()
-        action_mask = utils.available_moves_to_action_mask(utils.hand_to_state_rep(self.get_valid_moves_for_player(self.players[agent])))
-        fullObs = np.concatenate((fullObs, action_mask))
-        fullObs = fullObs.astype(np.float32)
-        return fullObs
+        obs['observations'] = np.vstack((obsSpace, rowToAdd)).flatten().astype(np.float32)
+        obs['action_mask'] = utils.available_moves_to_action_mask(utils.hand_to_state_rep(self.get_valid_moves_for_player(self.players[agent])))
+        # action_mask = utils.available_moves_to_action_mask(utils.hand_to_state_rep(self.get_valid_moves_for_player(self.players[agent])))
+        # fullObs = np.concatenate((fullObs, action_mask))
+        # fullObs = fullObs.astype(np.float32)
+        return obs
 
 
     def handle_rewards(self, playedCard, direction):
         """Handle rewards for the played card."""
 
         nextAgent = self.players[self._agent_selector.get_next_agent(direction)]
+        agentAfterNext = self.players[self._agent_selector.get_next_agent(direction)]
+        currentAgent = self.players[self.current_player]
+        normalCardCount = currentAgent.normal_playable_card_count(self.get_valid_moves_for_player(currentAgent))
+
+        if normalCardCount > 0 and nextAgent.card_count() > 1:
+            self.reward += self.reward_values['bad_special_play']
+
+        if currentAgent.card_count() == 1:
+            self.reward += self.reward_values['uno']
         
         #Handle when the player plays a card where they pick a color
         if(playedCard.value == card.VALUE.DRAW4 or playedCard.value == card.VALUE.NORMAL):
-            count = self.players[self.current_player].card_color_count(playedCard.color)
+            count = currentAgent.card_color_count(playedCard.color)
             reward_val = self.reward_values['color_select']
             self.reward += ((reward_val * count) - (1 * reward_val))
 
@@ -259,29 +292,38 @@ class UnoRLLibEnv(gym.Env):
                 if(nextAgent.card_count() == 1):
                     reward = self.reward_values['reverse_from_uno']
                     self.reward += reward
-                    #print(f"{self.current_player} gets reward {reward} for reversing away from {nextAgent.name} with 1 card")
-                return
+                if(nextAgent.card_count() < currentAgent.card_count()):
+                    self.reward += self.reward_values['reverse_less_cards']
+                elif(nextAgent.card_count() > currentAgent.card_count()):
+                    self.reward += self.reward_values['reverse_more_cards']
             case card.VALUE.SKIP:
+                
                 if(nextAgent.card_count() == 1):
                     reward = self.reward_values['skip_uno']
                     self.reward += reward
-                    #print(f"{self.current_player} gets reward {reward} for skipping {nextAgent.name} with 1 card")
-                return
+                if(nextAgent.card_count() < currentAgent.card_count()):
+                    self.reward += self.reward_values['skip_less_cards']
+                elif(nextAgent.card_count() > currentAgent.card_count()):
+                    self.reward += self.reward_values['skip_more_cards']
 
             case card.VALUE.DRAW2:
                 if(nextAgent.card_count() == 1):
                     reward = self.reward_values['draw2_uno']
                     self.reward += reward
-                    #print(f"{self.current_player} gets reward {reward} for making {nextAgent.name} draw 2 with 1 card")
-                return
+                if(nextAgent.card_count() < currentAgent.card_count()):
+                    self.reward += self.reward_values['draw2_less_cards']
+                elif(nextAgent.card_count() > currentAgent.card_count()):
+                    self.reward += self.reward_values['draw2_more_cards']
 
             case card.VALUE.DRAW4:
                 if(nextAgent.card_count() == 1):
                     reward = self.reward_values['draw4_uno']
                     self.reward += reward
-                    #print(f"{self.current_player} gets reward {reward} for making {nextAgent.name} draw 4 with 1 card")
-                return
-        
+                if(nextAgent.card_count() < currentAgent.card_count()):
+                    self.reward += self.reward_values['draw4_less_cards']
+                elif(nextAgent.card_count() > currentAgent.card_count()):
+                    self.reward += self.reward_values['draw4_more_cards']
+
         self.reward += self.reward_values['turn']
 
     ## checks if special action happens to the next player
@@ -320,8 +362,13 @@ class UnoRLLibEnv(gym.Env):
             self.winning_player = player
             if self.winning_player == self.trainingAgent:
                 self.reward += self.reward_values['win']
+                UnoRLLibEnv.wins += 1
             else:
                 self.reward += self.reward_values['lose']
+            UnoRLLibEnv.games += 1
+            #print(self.winning_player)
+            if self.players[self.trainingAgent].card_count() < 7:
+                self.reward += self.reward_values['less_than_start']
             return True
         return False
             

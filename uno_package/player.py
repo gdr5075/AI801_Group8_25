@@ -1,5 +1,6 @@
 import random
 from uno_package import card, utils
+import numpy as np
 
 class Player:
     def __init__(self, name):
@@ -40,6 +41,16 @@ class Player:
         (cardToPlay, chosenColor) = utils.action_to_card_rep(action)
         ctpColor = cardToPlay.split(' | ')[0]
         return action
+    
+    def get_action_multi_action_masking(self, observation, env):
+        moves = utils.state_rep_to_action_numbers_list(utils.hand_to_state_rep(env.get_valid_moves_for_player(self)))
+        if len(moves) == 0:
+            return utils.card_rep_to_action_number('DRAW')
+        action = self.decide(moves)
+        (cardToPlay, chosenColor) = utils.action_to_card_rep(action)
+        ctpColor = cardToPlay.split(' | ')[0]
+        return action
+    
     
     def decide(self, moves):
         return random.choice(moves)
@@ -89,6 +100,15 @@ class Player:
 
     def set_player_count(self, count):
         self.player_count = count
+
+    def normal_playable_card_count(self, available_moves):
+        playable_cards = utils.hand_to_state_rep(available_moves)
+        normal_reds = np.count_nonzero(playable_cards[0:10])
+        normal_greens = np.count_nonzero(playable_cards[15:25])
+        normal_blues = np.count_nonzero(playable_cards[30:40])
+        normal_yellows = np.count_nonzero(playable_cards[45:55])
+        
+        return normal_reds + normal_greens + normal_blues + normal_yellows
 
 class HumanPlayer(Player):
     def __init__(self, name):
@@ -221,7 +241,16 @@ class RuleBasedPlayer(Player):
         moves = utils.state_rep_to_action_numbers_list(utils.hand_to_state_rep(env.get_valid_moves_for_player(self)))
         if len(moves) == 0:
             return utils.card_rep_to_action_number('DRAW')
-        action = self.decide(moves, observation)
+        action = self.decide(moves, observation['observations'])
+        (cardToPlay, chosenColor) = utils.action_to_card_rep(action)
+        ctpColor = cardToPlay.split(' | ')[0]
+        return action
+    
+    def get_action_multi_action_masking(self, observation, env):
+        moves = utils.state_rep_to_action_numbers_list(utils.hand_to_state_rep(env.get_valid_moves_for_player(self)))
+        if len(moves) == 0:
+            return utils.card_rep_to_action_number('DRAW')
+        action = self.decide(moves, observation[self.name]['observations'])
         (cardToPlay, chosenColor) = utils.action_to_card_rep(action)
         ctpColor = cardToPlay.split(' | ')[0]
         return action

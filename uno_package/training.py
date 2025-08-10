@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 import json
-
+from uno_package import RLLibEnvSingleAgent
 def train_multiple_iterations(envToTrain, iterations):
     results_log = []
     for i in range(iterations):
@@ -21,11 +21,13 @@ def train_multiple_iterations(envToTrain, iterations):
             "episode_len_mean": result["env_runners"]["episode_len_mean"],
             "num_env_steps_sampled": result["env_runners"]["num_env_steps_sampled"],
         })
-        # Optionally, save results_log to a file for later plotting
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        #Save
-        checkpoint_path = envToTrain.save_to_path(f"file://{dir_path}/../checkpoints/checkpoint_{timestamp}")
-        print("checkpoint saved at", checkpoint_path)
+        if i % 20 == 0:
+            # Optionally, save results_log to a file for later plotting
+            dir_path = os.path.dirname(os.path.realpath(__file__))
+            #Save
+            checkpoint_path = envToTrain.save_to_path(f"file://{dir_path}/../checkpoints/checkpoint_{timestamp}")
+            print("checkpoint saved at", checkpoint_path)
+        print(RLLibEnvSingleAgent.UnoRLLibEnv.wins/RLLibEnvSingleAgent.UnoRLLibEnv.games)
 
     with open(f'{dir_path}/../checkpoints/checkpoint_{timestamp}/training_results_{timestamp}.json', "w") as f:
         json.dump(results_log, f, indent=2)

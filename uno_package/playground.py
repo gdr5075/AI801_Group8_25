@@ -37,11 +37,11 @@ def get_latest_created_folder(directory):
     latest_folder = max(subdirs, key=os.path.getctime)
     return latest_folder
 
-def play_single_game(algorithm, num_random_players=3, verbose=True):
+def play_single_game(algorithm, num_random_players=3, isFromActionMaskedEnv=False, verbose=True):
 
     # Create players
     agentIds = ['TrainedAgent'] + [f'RandomPlayer_{i}' for i in range(num_random_players)]
-    players = {id: player.RuleBasedPlayer(id) for id in agentIds}
+    players = {id: player.Player(id) for id in agentIds}
     if verbose:
         print(f'Players are {players}')
     # Needed?
@@ -50,9 +50,22 @@ def play_single_game(algorithm, num_random_players=3, verbose=True):
         'draw4_uno': 2,
         'skip_uno': 2,
         'reverse_from_uno': 2,
-        'turn': -0.1,
-        'win': 10.0,
+        'draw2_less_cards': .25,
+        'draw4_less_cards': .25,
+        'skip_less_cards': .25,
+        'reverse_less_cards': .25,
+        'draw2_more_cards': -.25,
+        'draw4_more_cards': -.25,
+        'skip_more_cards': -.25,
+        'reverse_more_cards': -.25,
+        'color_select' : .2,
+        'turn': 0.5,
+        'draw': -.05,
+        'win': 20,
         'lose': -5,
+        'invalid_action': -.1,
+        'less_than_start': .1,
+        'uno': 2
     }
     
     env_config = {
@@ -60,8 +73,10 @@ def play_single_game(algorithm, num_random_players=3, verbose=True):
         "hasHuman": False,
         "reward_values": reward_values,
     }
-    
-    env = PlaygroundEnv.PlaygroundEnv(env_config)
+    if isFromActionMaskedEnv:
+        env = PlaygroundEnv.PlaygroundEnvMulti(env_config)
+    else:
+        env = PlaygroundEnv.PlaygroundEnv(env_config)
     env.set_randomize(True)
     obs, _ = env.reset()
 
@@ -76,7 +91,7 @@ def play_single_game(algorithm, num_random_players=3, verbose=True):
         print(f"Starting game with {len(agentIds)} players: {agentIds}")
         print("=" * 50)
     
-    policy = algorithm.get_module()
+    policy = algorithm.get_module("UnoAgent_0")
     # Game loop
     while not env.winning_player:
         current_player = env.current_player
@@ -92,13 +107,32 @@ def play_single_game(algorithm, num_random_players=3, verbose=True):
         
         # Choose action based on player type
         if current_player == 'TrainedAgent':
-            obs_tensor = torch.tensor(obs, dtype=torch.float32).unsqueeze(0)
-            batch = {'obs': obs_tensor}
-            output = policy._forward_inference(batch)
-            action = output['actions'].item()  # Extract action from output
+            print(obs)
+            if isFromActionMaskedEnv:
+                obs_tensor = torch.tensor(obs[current_player]['observations'], dtype=torch.float32).unsqueeze(0)
+                action_mask_tensor = torch.tensor(obs[current_player]['action_mask'], dtype=torch.float32).unsqueeze(0)
+                batch = {
+                    'obs': { 
+                        current_player: {
+                            'observations': obs_tensor,
+                            'action_mask': action_mask_tensor
+                        }
+                    }
+                }
+                output = policy._forward_inference(batch)
+                action = {current_player: torch.argmax(output['action_dist_inputs'][0]).item()}  # Extract action from output
+            else:
+                obs_tensor = torch.tensor(obs, dtype=torch.float32).unsqueeze(0)
+                action_mask_tensor = torch.tensor(obs[76:136], dtype=torch.float32).unsqueeze(0)
+                batch = {'obs': { 'observations': obs_tensor, 'action_mask': action_mask_tensor}}
+                output = policy._forward_inference(batch)
+                action = output['actions'].item()  # Extract action from output
         else:
             #TODO - This portion needs to be cleaned up / reworked to support other action types
-            action = players[current_player].get_action_sa(obs, env)
+            if isFromActionMaskedEnv:
+                action = { current_player: players[current_player].get_action_multi_action_masking(obs, env) }
+            else:
+                action = players[current_player].get_action_sa(obs, env)
         
         if verbose:
             card_rep = utils.action_to_card_rep(action)
@@ -109,8 +143,6 @@ def play_single_game(algorithm, num_random_players=3, verbose=True):
                     print(f"Chosen color: {chosen_color}")
             else:
                 print(f"{current_player} plays: Draw Card")
-
-        
 
         # Take step
         obs, reward, done, truncated, info = env.step(action)
@@ -132,7 +164,7 @@ def play_single_game(algorithm, num_random_players=3, verbose=True):
     
     return game_stats
 
-def play_multiple_games(algorithm, num_games=10, num_random_players=3):
+def play_multiple_games(algorithm, num_games=10, num_random_players=3, isFromActionMaskedEnv=False):
     
     results = {
         'total_games': num_games,
@@ -150,7 +182,7 @@ def play_multiple_games(algorithm, num_games=10, num_random_players=3):
         if (game_num % 100 == 0):
             print(f"Executing game number {game_num}")
 
-        game_stats = play_single_game(algorithm, num_random_players, False)
+        game_stats = play_single_game(algorithm, num_random_players, isFromActionMaskedEnv, False)
         results['game_results'].append(game_stats)
         
         if game_stats['trained_agent_won']:
@@ -180,10 +212,10 @@ def demo_single_game(checkpoint_num):
     algorithm = load_latest_checkpoint()
     play_single_game(algorithm, num_random_players=3, verbose=False)
 
-def demo_multiple_games(checkpoint_num):
+def demo_multiple_games(checkpoint_num, isFromActionMaskedEnv = False):
     algorithm = load_checkpoint(checkpoint_num)
-    play_multiple_games(algorithm, num_games = 2000, num_random_players=3)
+    play_multiple_games(algorithm, num_games = 2000, num_random_players=3, isFromActionMaskedEnv=isFromActionMaskedEnv)
 
-def demo_multiple_games_latest_checkpoint():
+def demo_multiple_games_latest_checkpoint(isFromActionMaskedEnv = False):
     algorithm = load_latest_checkpoint()
-    play_multiple_games(algorithm, num_games = 2000, num_random_players=3)
+    play_multiple_games(algorithm, num_games = 10000, num_random_players=3, isFromActionMaskedEnv = isFromActionMaskedEnv)
