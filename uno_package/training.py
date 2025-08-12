@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 import json
+from plot_training_results import plot_training_results
 
 def train_multiple_iterations(envToTrain, iterations):
     verbose = False
@@ -34,6 +35,8 @@ def train_multiple_iterations(envToTrain, iterations):
         #Save
         checkpoint_path = envToTrain.save_to_path(f"file://{dir_path}/../checkpoints/checkpoint_{timestamp}")
         print("checkpoint saved at", checkpoint_path)
-
-    with open(f'{dir_path}/../checkpoints/checkpoint_{timestamp}/training_results_{timestamp}.json', "w") as f:
-        json.dump(results_log, f, indent=2)
+        with open(f'{dir_path}/../checkpoints/checkpoint_{timestamp}/training_results_{timestamp}.json', "w") as f:
+            json.dump(results_log, f, indent=2)
+            print("training_results saved at", f'{dir_path}/../checkpoints/checkpoint_{timestamp}/training_results_{timestamp}.json')
+        
+        plot_training_results(f'{dir_path}/../checkpoints/checkpoint_{timestamp}/training_results_{timestamp}.json')

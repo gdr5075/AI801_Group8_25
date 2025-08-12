@@ -340,6 +340,26 @@ class PlaygroundEnv(gym.Env):
             cards.append(self.deck.pop())
         player.add_to_hand(cards)
     
+    def get_valid_actions_for_player(self, player):
+        valid_actions = []
+        play_top = self.get_top_play_card()
+        cards = player.get_hand()
+        #print(f"Player: {player.name}")
+        #print(f"Top card: {play_top}")
+        #print(f"Cards: {cards}")
+        for pCard in cards:
+            if pCard.color == play_top.color or pCard.value == play_top.value or pCard.color == card.COLOR.WILD or pCard.color.value == self.wildColor:
+                if pCard.color == card.COLOR.WILD:
+                    valid_actions.append(utils.card_to_action_number(pCard, card.COLOR.RED.value))
+                    valid_actions.append(utils.card_to_action_number(pCard, card.COLOR.GREEN.value))
+                    valid_actions.append(utils.card_to_action_number(pCard, card.COLOR.BLUE.value))
+                    valid_actions.append(utils.card_to_action_number(pCard, card.COLOR.YELLOW.value))
+                else:
+                    valid_actions.append(utils.card_to_action_number(pCard, None))
+        if len(valid_actions) == 0:
+            valid_actions.append(60)
+        return valid_actions
+
     def get_valid_moves_for_player(self, player):
         valid_moves = []
         play_top = self.get_top_play_card()
