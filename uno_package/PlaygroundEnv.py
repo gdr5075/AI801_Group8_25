@@ -143,6 +143,8 @@ class PlaygroundEnv(gym.Env):
         # gets a tuple of card representation and wild color
         playedCardRepr = utils.action_to_card_rep(action)
         #print(f'This makes the played representation {playedCardRepr}')
+        if len(self.get_valid_moves_for_player(self.players[self.current_player])) != 0 and action == 60:
+            return self.observe(self.current_player), self.reward, self.terminated, self.truncated, {}
 
         # if the agent's action is draw, this will be true if they draw a playable card
         agentDrewPlayableCard = False

@@ -246,16 +246,17 @@ def demo_single_game(checkpoint_num):
     algorithm = load_latest_checkpoint()
     play_single_game(algorithm, num_random_players=3, verbose=False)
 
-def demo_multiple_games(checkpoint_num):
+def demo_multiple_games(checkpoint_num, num_games=1000):
     algorithm = load_checkpoint(checkpoint_num)
-    play_multiple_games(algorithm, num_games = 1000, num_random_players=3)
+    play_multiple_games(algorithm, num_games = num_games, num_random_players=3)
 
-def demo_multiple_games_latest_checkpoint():
+def demo_multiple_games_latest_checkpoint(num_games=1000):
     algorithm = load_latest_checkpoint()
-    play_multiple_games(algorithm, num_games = 1000, num_random_players=3)
+    play_multiple_games(algorithm, num_games = num_games, num_random_players=3)
 
 def find_highest_win_rate_checkpoint():
     highest_win_rate = 0
+    highest_win_rate_checkpoints = {}
     dir_path = os.path.dirname(os.path.realpath(__file__))+"/../checkpoints/"
     for dir in os.listdir(dir_path):
         if os.path.isdir(os.path.join(dir_path, dir)):
@@ -263,11 +264,15 @@ def find_highest_win_rate_checkpoint():
             algorithm = load_checkpoint_from_path(checkpoint_path)
             if algorithm is None:
                 continue
-            results = play_multiple_games(algorithm, num_games = 250, num_random_players=3)
+            results = play_multiple_games(algorithm, num_games = 500, num_random_players=3)
             if results['trained_win_rate'] > highest_win_rate:
+                print(f"New highest win rate: {results['trained_win_rate']} for checkpoint: {dir}")
+                print(f"Current highest win rate checkpoints: {highest_win_rate_checkpoints}")
                 highest_win_rate = results['trained_win_rate']
-                highest_win_rate_checkpoint = dir
-    print(f"Highest win rate checkpoint: {highest_win_rate_checkpoint} with win rate: {highest_win_rate}")
+                highest_win_rate_checkpoints[dir] = results['trained_win_rate']
+    print(f"Highest win rate checkpoint: {highest_win_rate_checkpoints} with win rate: {highest_win_rate}")
+    print(f"Highest win rate checkpoints: {highest_win_rate_checkpoints}")
+    return highest_win_rate_checkpoints
 
 
 
